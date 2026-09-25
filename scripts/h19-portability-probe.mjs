@@ -1,0 +1,852 @@
+#!/usr/bin/env node
+import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
+import { readFile, rm, writeFile } from 'node:fs/promises';
+import path from 'node:path';
+import { pathToFileURL } from 'node:url';
+
+const targetRoot = path.resolve(process.env.TARGET_ROOT ?? 'target');
+const h19Root = path.resolve(process.env.H19_KIT_ROOT ?? 'h19-source/tools/h19-kit');
+const outputPath = path.resolve(process.env.H19_REPORT ?? 'h19-portability-report.json');
+const sourceRevision = process.env.TARGET_SOURCE_REVISION;
+const changeRevision = process.env.TARGET_CHANGE_REVISION;
+const scipExecutable = process.env.SCIP_EXECUTABLE;
+const decoderIdentity = process.env.SCIP_DECODER_ID;
+
+if (!sourceRevision || !changeRevision || !scipExecutable || !decoderIdentity) {
+  throw new Error('TARGET_SOURCE_REVISION, TARGET_CHANGE_REVISION, SCIP_EXECUTABLE and SCIP_DECODER_ID are required');
+}
+
+const importH19 = async (relativePath) =>
+  import(pathToFileURL(path.join(h19Root, relativePath)).href);
+
+const [
+  inventoryApi,
+  historyApi,
+  hotspotApi,
+  shardApi,
+  graphApi,
+  projectGraphApi,
+  impactApi,
+  discoveryApi,
+  packetApi,
+  specApi,
+  candidateApi,
+  relationalApi,
+  composerApi,
+  judgmentApi,
+] = await Promise.all([
+  importH19('src/repository/inventory.mjs'),
+  importH19('src/adapters/git-history.mjs'),
+  importH19('src/adapters/git-hotspots.mjs'),
+  importH19('src/indexing/typescript-project-shards.mjs'),
+  importH19('src/indexing/typescript-evidence-graph.mjs'),
+  importH19('src/impact/project-graph.mjs'),
+  importH19('src/impact/change-impact.mjs'),
+  importH19('src/discovery/coverage-discovery.mjs'),
+  importH19('src/discovery/validation-packet.mjs'),
+  importH19('src/specification/test-spec.mjs'),
+  importH19('src/materialization/test-candidate.mjs'),
+  importH19('src/relations/relational-evidence.mjs'),
+  importH19('src/relations/relational-case-composer.mjs'),
+  importH19('src/relations/relational-judgment-batch.mjs'),
+]);
+
+function command(cmd, args, cwd = targetRoot) {
+  return execFileSync(cmd, args, {
+    cwd,
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe'],
+  }).trim();
+}
+
+function changedPaths(revision) {
+  return command('git', [
+    'show',
+    '--pretty=format:',
+    '--name-only',
+    '--no-renames',
+    revision,
+  ]).split(/\r?\n/).map((x) => x.trim()).filter(Boolean).sort();
+}
+
+function sha256Text(value) {
+  return createHash('sha256').update(String(value)).digest('hex');
+}
+
+function renderSitePhysicsCandidate(spec) {
+  const invariant = String(spec.expectedInvariant.value).replaceAll('\n', ' ');
+  const target = spec.target.path;
+  return [
+    'import { expect, test } from "@playwright/test";',
+    '',
+    'async function scrollNaturallyTo(page: import("@playwright/test").Page, targetY: number) {',
+    '  await page.evaluate(async (target) => {',
+    '    const start = window.scrollY;',
+    '    const steps = 16;',
+    '    for (let step = 1; step <= steps; step += 1) {',
+    '      const progress = step / steps;',
+    '      const eased = progress * progress * (3 - 2 * progress);',
+    '      window.scrollTo(0, start + (target - start) * eased);',
+    '      await new Promise((resolve) => window.setTimeout(resolve, 18));',
+    '    }',
+    '  }, targetY);',
+    '}',
+    '',
+    'async function expectNoHorizontalOverflow(page: import("@playwright/test").Page) {',
+    '  const metrics = await page.evaluate(() => ({',
+    '    viewport: window.innerWidth,',
+    '    body: document.body.scrollWidth,',
+    '    html: document.documentElement.scrollWidth,',
+    '  }));',
+    '  expect(metrics.body).toBeLessThanOrEqual(metrics.viewport + 1);',
+    '  expect(metrics.html).toBeLessThanOrEqual(metrics.viewport + 1);',
+    '}',
+    '',
+    'test("H19 generated SitePhysicsDirector runtime contract", async ({ page }) => {',
+    '  // target: ' + target,
+    '  // invariant: ' + invariant,
+    '  await page.goto("/");',
+    '  const material = page.locator(".site-material");',
+    '  const modules = page.locator(".material-module");',
+    '  await expect(modules).toHaveCount(19);',
+    '  await expect(material).toHaveAttribute("data-physics-ready", "true");',
+    '',
+    '  const projects = [',
+    '    ["#project-kepenk", "kepenk"],',
+    '    ["#project-yote", "yote"],',
+    '    ["#project-kldrm", "kldrm"],',
+    '    ["#project-h19", "h19"],',
+    '  ] as const;',
+    '  const signatures: string[] = [];',
+    '',
+    '  for (const [selector, expectedState] of projects) {',
+    '    const targetY = await page.locator(selector).evaluate((element) =>',
+    '      element.getBoundingClientRect().top + window.scrollY - window.innerHeight * 0.3,',
+    '    );',
+    '    await scrollNaturallyTo(page, targetY);',
+    '    await page.waitForTimeout(120);',
+    '    await expect(material).toHaveAttribute("data-current-material-state", expectedState);',
+    '    signatures.push(await modules.evaluateAll((items) =>',
+    '      items.map((item) => [',
+    '        item.getAttribute("transform") ?? "",',
+    '        item.getAttribute("opacity") ?? "",',
+    '        item.getAttribute("style") ?? "",',
+    '      ].join("::")).join("|"),',
+    '    ));',
+    '  }',
+    '',
+    '  expect(new Set(signatures).size).toBe(4);',
+    '  await expectNoHorizontalOverflow(page);',
+    '});',
+    '',
+  ].join('\n');
+}
+
+function summarizeError(error) {
+  return error instanceof Error ? {
+    name: error.name,
+    message: error.message,
+    stack: error.stack?.split('\n').slice(0, 6).join('\n') ?? null,
+  } : {
+    name: 'NonError',
+    message: String(error),
+    stack: null,
+  };
+}
+
+const report = {
+  schemaVersion: 1,
+  kind: 'h19-cross-repo-portability-probe',
+  target: {
+    repository: 'ziyabeey/yzt-digital',
+    sourceRevision,
+    changeRevision,
+  },
+  h19: {
+    repository: 'ziyabeey/randevu',
+    revision: process.env.H19_SOURCE_REVISION ?? null,
+  },
+  environment: {
+    node: process.version,
+    platform: process.platform,
+    arch: process.arch,
+  },
+  stages: {},
+  observations: {},
+};
+
+async function stage(id, fn) {
+  const started = performance.now();
+  try {
+    const value = await fn();
+    report.stages[id] = {
+      status: 'pass',
+      durationMs: performance.now() - started,
+      value,
+    };
+    return value;
+  } catch (error) {
+    report.stages[id] = {
+      status: 'fail',
+      durationMs: performance.now() - started,
+      error: summarizeError(error),
+    };
+    return null;
+  }
+}
+
+const doctor = await stage('M0-doctor', async () => ({
+  node: process.version,
+  git: command('git', ['--version'], targetRoot),
+  scip: command(scipExecutable, ['--version'], targetRoot),
+  scipTypeScript: command('scip-typescript', ['--version'], targetRoot),
+}));
+
+const inventory = await stage('M1-repository-inventory', async () => {
+  const result = await inventoryApi.repositoryInventory(targetRoot);
+  report.observations.inventory = result;
+  const languages = {};
+  for (const unit of result.units) {
+    const language = unit.language ?? 'unknown';
+    languages[language] = (languages[language] ?? 0) + 1;
+  }
+  return {
+    filesScanned: result.filesScanned,
+    semanticUnits: result.units.length,
+    errors: result.errors,
+    languages,
+  };
+});
+
+const history = await stage('M2-history-evidence', async () => {
+  const [couplings, hotspots] = await Promise.all([
+    historyApi.temporalCoupling({ cwd: targetRoot, since: '365 days ago' }),
+    hotspotApi.gitHotspots({ cwd: targetRoot, since: '365 days ago' }),
+  ]);
+  report.observations.temporalCoupling = couplings;
+  report.observations.hotspots = hotspots;
+  return {
+    couplingPairs: couplings.length,
+    hotspotFiles: hotspots.length,
+    topHotspots: hotspots.slice(0, 8),
+    topCouplings: couplings.slice(0, 8),
+  };
+});
+
+const shards = await stage('M3.5-typescript-shards', async () => {
+  const result = await shardApi.resolveTypeScriptProjectShards({
+    cwd: targetRoot,
+    rootConfig: 'tsconfig.json',
+  });
+  report.observations.shards = result;
+  return {
+    shardCount: result.length,
+    shards: result.map((x) => ({
+      id: x.id,
+      sourceFiles: x.sourceFiles.length,
+      configFiles: x.configFiles,
+    })),
+  };
+});
+
+const graphResult = await stage('M3.5-scip-evidence-graph', async () => {
+  const result = await graphApi.buildTypeScriptEvidenceGraph({
+    cwd: targetRoot,
+    strategy: 'project-shards',
+    allowWholeFallback: true,
+    rootConfig: 'tsconfig.json',
+    scipTypeScriptVersion: '0.4.0',
+    scipTypeScriptCommand: 'scip-typescript',
+    scipExecutable,
+    decoderIdentity,
+    graphSchemaVersion: 1,
+  });
+  report.observations.graphSummary = {
+    mode: result.mode,
+    fallbackReason: result.fallbackReason,
+    nodeCount: result.graph.nodeCount,
+    cache: result.cache,
+    project: result.project ?? null,
+    shards: result.shards,
+  };
+  report._graph = result.graph;
+  return report.observations.graphSummary;
+});
+
+const selectedChangeFiles = changedPaths(changeRevision);
+report.target.changeFiles = selectedChangeFiles;
+
+const impact = await stage('M4-change-impact', async () => {
+  if (!inventory || !graphResult || !history) {
+    throw new Error('M4 prerequisites did not all pass');
+  }
+  const graph = projectGraphApi.projectGraph({
+    projects: [{ id: 'yzt-digital', root: '' }],
+    dependencies: [],
+  });
+  const result = impactApi.analyzeChangeImpact({
+    projectGraph: graph,
+    changedFiles: selectedChangeFiles,
+    semanticUnits: report.observations.inventory.units,
+    symbolGraph: report._graph,
+    coverageByPath: {},
+    temporalCoupling: report.observations.temporalCoupling,
+    companionThreshold: 0.75,
+    includeRelatedSymbols: true,
+  });
+  report.observations.impact = result;
+  return {
+    changedFiles: result.changedFiles,
+    touchedProjects: result.projectImpact.touched,
+    affectedProjects: result.projectImpact.affected,
+    mappedUnits: result.symbolImpact.mapping.matches.length,
+    unmatchedUnits: result.symbolImpact.mapping.unmatched.length,
+    referenceSiteCount: result.symbolImpact.report.referenceSiteCount,
+    impactedPaths: result.symbolImpact.report.impactedPaths,
+    testReferencePaths: result.symbolImpact.report.testReferencePaths,
+    unknownCoveragePaths: result.symbolImpact.report.unknownCoveragePaths,
+    uncoveredPaths: result.symbolImpact.report.uncoveredPaths,
+    historicalCompanionsMissing: result.symbolImpact.report.historicalCompanionsMissing,
+    candidateTests: result.candidateTests,
+    unknowns: result.unknowns,
+    safeToNarrow: result.safeToNarrow,
+  };
+});
+
+const discovery = await stage('M5-coverage-discovery', async () => {
+  if (!impact) throw new Error('M5 requires M4 impact');
+  const testPaths = [...new Set(
+    report.observations.inventory.units
+      .map((x) => x.path)
+      .filter((p) => impactApi.isLikelyTestPath(p)),
+  )].sort();
+
+  const result = discoveryApi.discoverCoverageHypotheses({
+    impact: report.observations.impact,
+    survivingMutants: [],
+    existingTests: testPaths,
+  });
+  const packet = packetApi.freezeCoverageDiscoveryPacket({
+    changeId: `commit:${changeRevision}`,
+    sourceRevision,
+    impact: report.observations.impact,
+    discovery: result,
+  });
+  report.observations.discovery = result;
+  report.observations.packet = packet;
+  return {
+    hypothesisCount: result.hypotheses.length,
+    highPriorityCount: result.highPriorityCount,
+    reasons: Object.fromEntries(
+      [...new Set(result.hypotheses.map((x) => x.reason))]
+        .sort()
+        .map((reason) => [reason, result.hypotheses.filter((x) => x.reason === reason).length]),
+    ),
+    hypotheses: result.hypotheses.slice(0, 12),
+    packetSha256: packet.packetSha256,
+    safeToNarrow: packet.safeToNarrow,
+  };
+});
+
+const runtimeValidation = await stage('M5-runtime-validation', async () => {
+  if (!discovery) throw new Error('runtime validation requires M5 output');
+
+  const hypothesisId =
+    'coverage:unknown-runtime-coverage-on-impacted-reference:components_SitePhysicsDirector.tsx';
+  const hypothesis = report.observations.packet.hypotheses
+    .find((item) => item.id === hypothesisId);
+  if (!hypothesis) throw new Error('SitePhysicsDirector coverage hypothesis missing');
+
+  const sourcePath = 'components/SitePhysicsDirector.tsx';
+  const testPath = 'tests/mobile.spec.ts';
+  const [sourceText, testText] = await Promise.all([
+    readFile(path.join(targetRoot, sourcePath), 'utf8'),
+    readFile(path.join(targetRoot, testPath), 'utf8'),
+  ]);
+
+  for (const witness of [
+    'materialRoot.dataset.physicsReady = "true"',
+    'materialRoot.dataset.currentMaterialState',
+  ]) {
+    if (!sourceText.includes(witness)) {
+      throw new Error('source-bound runtime witness missing: ' + witness);
+    }
+  }
+  for (const witness of [
+    'data-physics-ready',
+    'data-current-material-state',
+  ]) {
+    if (!testText.includes(witness)) {
+      throw new Error('Playwright witness assertion missing: ' + witness);
+    }
+  }
+
+  const testNames = [
+    'aynı 19 modül baştan finale kadar biçim değiştiriyor',
+    'dört proje aynı 19 parçaya dört farklı dil veriyor',
+  ];
+  const grep = testNames.join('|');
+  const stdout = command('npx', [
+    'playwright',
+    'test',
+    testPath,
+    '--project=mobile-small',
+    '--grep',
+    grep,
+    '--reporter=list',
+  ], targetRoot);
+
+  const validation = packetApi.coverageValidationResult({
+    packet: report.observations.packet,
+    hypothesisId,
+    status: 'confirmed',
+    observed: {
+      kind: 'source-bound-playwright-runtime-witness-v1',
+      sourceRevision,
+      sourcePath,
+      sourceBlobSha: command(
+        'git',
+        ['rev-parse', sourceRevision + ':' + sourcePath],
+        targetRoot,
+      ),
+      testPath,
+      testBlobSha: command(
+        'git',
+        ['rev-parse', sourceRevision + ':' + testPath],
+        targetRoot,
+      ),
+      project: 'mobile-small',
+      testNames,
+      resolution: 'runtime-witness-present',
+      runtimeCoverageObserved: true,
+      coverageGapEstablished: false,
+      witnesses: [
+        'SitePhysicsDirector writes data-physics-ready=true',
+        'SitePhysicsDirector writes data-current-material-state during project transitions',
+        'existing Playwright tests assert both source-owned markers while scrolling the same 19 material modules',
+      ],
+      outputTail: stdout.split(/\r?\n/).slice(-24),
+    },
+  });
+  report.observations.sitePhysicsValidation = validation;
+  return {
+    hypothesisId,
+    status: validation.status,
+    project: 'mobile-small',
+    tests: testNames.length,
+    sourcePath,
+    testPath,
+  };
+});
+
+const testSpecification = await stage('M6-test-specification', async () => {
+  if (!runtimeValidation) throw new Error('M6 specification requires runtime validation');
+
+  const hypothesisId = runtimeValidation.hypothesisId;
+  const recipe = specApi.freezeTestRecipe({
+    recipeId: 'yzt-digital-site-physics-playwright',
+    version: '0.1',
+    matches: {
+      reason: 'unknown-runtime-coverage-on-impacted-reference',
+    },
+    setup: [
+      'Use frozen yzt-digital source revision and Playwright mobile-small viewport.',
+      'Load / and wait for .site-material to expose data-physics-ready=true.',
+    ],
+    action: 'Scroll the persistent 19 material modules through the lab and project sections.',
+    expectedInvariant: 'Site physics initializes, material transforms/state markers change across sections, and horizontal overflow remains absent.',
+    observations: [
+      '.site-material[data-physics-ready="true"]',
+      '.site-material[data-current-material-state] reaches kepenk, yote, kldrm and h19',
+      '19 .material-module nodes persist while transform signatures change',
+      'viewport remains free of horizontal overflow',
+    ],
+  });
+
+  const spec = specApi.buildTestSpecification({
+    packet: report.observations.packet,
+    hypothesisId,
+    validationResult: report.observations.sitePhysicsValidation,
+    recipe,
+  });
+  specApi.validateTestSpecification(spec);
+  report.observations.sitePhysicsRecipe = recipe;
+  report.observations.sitePhysicsTestSpecification = spec;
+  return {
+    hypothesisId,
+    specSha256: spec.specSha256,
+    readyForExecution: spec.readyForExecution,
+    unknowns: spec.unknowns,
+    target: spec.target,
+    validation: spec.origin.validation,
+  };
+});
+
+const testCandidate = await stage('M7-test-candidate', async () => {
+  if (!testSpecification) throw new Error('M7 requires ready M6 specification');
+  const spec = report.observations.sitePhysicsTestSpecification;
+
+  const renderer = {
+    rendererId: 'yzt-digital-playwright-site-physics',
+    version: '0.1',
+    framework: '@playwright/test',
+    language: 'typescript',
+    artifactSha256: sha256Text(renderSitePhysicsCandidate.toString()),
+    render(input) {
+      return {
+        path: 'tests/h19-generated-site-physics.spec.ts',
+        operation: 'create',
+        content: renderSitePhysicsCandidate(input),
+      };
+    },
+  };
+
+  const candidate = candidateApi.materializeTestCandidate({ spec, renderer });
+  candidateApi.validateTestCandidate(candidate);
+  report.observations.sitePhysicsTestCandidate = candidate;
+  return {
+    candidateSha256: candidate.candidateSha256,
+    contentSha256: candidate.contentSha256,
+    specSha256: candidate.specSha256,
+    path: candidate.target.path,
+    operation: candidate.target.operation,
+    renderer: candidate.renderer,
+  };
+});
+
+const candidateExecution = await stage('M7-candidate-execution', async () => {
+  if (!testCandidate) throw new Error('M7 candidate execution requires materialized candidate');
+  const candidate = report.observations.sitePhysicsTestCandidate;
+  const candidatePath = path.join(targetRoot, candidate.target.path);
+
+  try {
+    await readFile(candidatePath, 'utf8');
+    throw new Error('M7 candidate target already exists in frozen target');
+  } catch (error) {
+    if (error?.code !== 'ENOENT') throw error;
+  }
+
+  try {
+    await writeFile(candidatePath, candidate.content, 'utf8');
+    const stdout = command('npx', [
+      'playwright',
+      'test',
+      candidate.target.path,
+      '--project=mobile-small',
+      '--reporter=list',
+    ], targetRoot);
+    return {
+      candidateSha256: candidate.candidateSha256,
+      path: candidate.target.path,
+      project: 'mobile-small',
+      outputTail: stdout.split(/\r?\n/).slice(-24),
+    };
+  } finally {
+    await rm(candidatePath, { force: true });
+  }
+});
+
+const relationalEvidence = await stage('M8-relational-evidence', async () => {
+  if (!candidateExecution) throw new Error('M8 requires executed M7 candidate');
+
+  const hypothesisId = runtimeValidation.hypothesisId;
+  const validation = report.observations.sitePhysicsValidation;
+  const impactReport = report.observations.impact.symbolImpact.report;
+  const candidate = report.observations.sitePhysicsTestCandidate;
+
+  const coverageFact = {
+    factId: 'coverage:site-physics-runtime-witness',
+    family: 'coverage',
+    state: 'present',
+    metricId: 'playwright.source-bound-runtime-witness-count',
+    value: validation.observed.testNames.length,
+    unit: 'tests',
+    denominator: validation.observed.testNames.length,
+    sampleSize: validation.observed.testNames.length,
+    baseline: null,
+    lineageIds: [
+      'playwright:' + validation.observed.testBlobSha + ':mobile-small',
+    ],
+    provenance: {
+      producer: 'h19-yzt-portability-probe',
+      producerVersion: '0.1',
+      inputDigest: sha256Text(JSON.stringify(validation)),
+      sourceRevision,
+      evidenceIds: [
+        'impact.coverage_gap.present',
+        'source-bound-playwright-runtime-witness-v1',
+      ],
+    },
+  };
+
+  const dependencyFact = {
+    factId: 'dependency:site-physics-reference-sites',
+    family: 'dependency',
+    state: 'present',
+    metricId: 'scip.impacted-reference-site-count',
+    value: impactReport.referenceSiteCount,
+    unit: 'reference-sites',
+    denominator: null,
+    sampleSize: null,
+    baseline: null,
+    lineageIds: [
+      'scip:' + sourceRevision + ':' + decoderIdentity,
+    ],
+    provenance: {
+      producer: 'h19-typescript-evidence-graph',
+      producerVersion: '0.1',
+      inputDigest: sha256Text(JSON.stringify(report.observations.graphSummary)),
+      sourceRevision,
+      evidenceIds: ['impact.references.present'],
+    },
+  };
+
+  const facts = [coverageFact, dependencyFact];
+  const relationalCase = relationalApi.buildRelationalEvidenceCase({
+    packet: report.observations.packet,
+    hypothesisId,
+    facts,
+  });
+  relationalApi.validateRelationalEvidenceCase(relationalCase, {
+    packet: report.observations.packet,
+  });
+
+  const independent = relationalCase.deterministicFeatures
+    .find((feature) => feature.kind === 'independent-family-count');
+  const overlap = relationalCase.deterministicFeatures
+    .find((feature) => feature.kind === 'lineage-overlap');
+  if (independent?.value !== 2 || overlap?.value !== false) {
+    throw new Error('M8 did not preserve two independent non-overlapping evidence families');
+  }
+
+  report.observations.sitePhysicsRelationalFacts = facts;
+  report.observations.sitePhysicsRelationalCase = relationalCase;
+  return {
+    caseSha256: relationalCase.caseSha256,
+    hypothesisId,
+    factIds: relationalCase.facts.map((fact) => fact.factId),
+    families: relationalCase.facts.map((fact) => fact.family),
+    independentFamilyCount: independent.value,
+    lineageOverlap: overlap.value,
+    candidateSha256: candidate.candidateSha256,
+    authority: relationalCase.authority,
+  };
+});
+
+const relationalBatch = await stage('M9-relational-case-composer', async () => {
+  if (!relationalEvidence) throw new Error('M9 requires M8 relational evidence');
+  const targetPath = 'components/SitePhysicsDirector.tsx';
+  const factPool = report.observations.sitePhysicsRelationalFacts.map((fact) =>
+    composerApi.freezeScopedRelationalFact({
+      fact,
+      scope: { kind: 'path', path: targetPath },
+    }));
+
+  const composed = composerApi.composeRelationalCaseBatch({
+    packet: report.observations.packet,
+    factPool,
+    relationships: [],
+  });
+  composerApi.validateRelationalCaseBatch(composed.batch, {
+    packet: report.observations.packet,
+    relationalCases: composed.relationalCases,
+    factPool,
+    relationships: [],
+  });
+
+  if (composed.batch.cases.length !== 1 || composed.relationalCases.length !== 1) {
+    throw new Error('M9 expected exactly one eligible relational case');
+  }
+  const selected = composed.batch.cases[0];
+  if (selected.hypothesisId !== runtimeValidation.hypothesisId) {
+    throw new Error('M9 selected the wrong hypothesis');
+  }
+  if (selected.caseSha256 !== report.observations.sitePhysicsRelationalCase.caseSha256) {
+    throw new Error('M9 case identity differs from direct M8 case');
+  }
+
+  const otherSkips = composed.batch.skipped
+    .filter((item) => item.hypothesisId !== runtimeValidation.hypothesisId);
+  if (otherSkips.length !== report.observations.packet.hypotheses.length - 1
+    || otherSkips.some((item) => item.reason !== 'missing-required-anchor')) {
+    throw new Error('M9 did not preserve honest skip reasons for unbound hypotheses');
+  }
+
+  report.observations.sitePhysicsRelationalBatch = composed.batch;
+  return {
+    batchSha256: composed.batch.batchSha256,
+    compositionInputSha256: composed.batch.compositionInputSha256,
+    caseCount: composed.batch.cases.length,
+    skippedCount: composed.batch.skipped.length,
+    selectedCaseSha256: selected.caseSha256,
+    selectedFactIds: selected.selectedFactIds,
+    independentFamilyCount: selected.independentFamilyCount,
+    skipReasons: Object.fromEntries(
+      [...new Set(composed.batch.skipped.map((item) => item.reason))]
+        .sort()
+        .map((reason) => [
+          reason,
+          composed.batch.skipped.filter((item) => item.reason === reason).length,
+        ]),
+    ),
+    authority: composed.relationalCases[0].authority,
+  };
+});
+
+const judgmentPlanning = await stage('M10-relational-judgment-plan', async () => {
+  if (!relationalBatch) throw new Error('M10 requires M9 relational batch');
+  const batch = report.observations.sitePhysicsRelationalBatch;
+  const relationalCases = [report.observations.sitePhysicsRelationalCase];
+
+  const planA = judgmentApi.buildRelationalJudgmentRequestPlan({
+    batch,
+    relationalCases,
+  });
+  const planB = judgmentApi.buildRelationalJudgmentRequestPlan({
+    batch,
+    relationalCases,
+  });
+  judgmentApi.validateRelationalJudgmentRequestPlan(planA, {
+    batch,
+    relationalCases,
+  });
+  if (planA.requestPlanSha256 !== planB.requestPlanSha256) {
+    throw new Error('M10 request plan is not deterministic');
+  }
+
+  let providerFetches = 0;
+  const result = await judgmentApi.runRelationalJudgmentBatch({
+    batch,
+    relationalCases,
+    maxLiveQuestions: 0,
+    apiKey: '',
+    cache: null,
+    fetchImpl: async () => {
+      providerFetches += 1;
+      throw new Error('M10 zero-budget portability run must not reach provider');
+    },
+  });
+
+  judgmentApi.validateRelationalJudgmentRun(result.run, {
+    batch,
+    requestPlan: result.requestPlan,
+    relationalCases,
+    judgments: result.judgments,
+    cacheEntries: result.cacheEntries,
+  });
+
+  if (providerFetches !== 0 || result.run.providerRequestCount !== 0) {
+    throw new Error('M10 zero-budget run attempted provider work');
+  }
+  if (result.requestPlan.requestPlanSha256 !== planA.requestPlanSha256) {
+    throw new Error('M10 run request plan differs from preflight plan');
+  }
+  if (result.run.rows.length !== 1
+    || result.run.rows[0].kind !== 'skipped'
+    || result.run.rows[0].reason !== 'live-question-budget') {
+    throw new Error('M10 zero-budget run did not fail closed at live-question budget');
+  }
+
+  report.observations.sitePhysicsJudgmentRequestPlan = result.requestPlan;
+  report.observations.sitePhysicsJudgmentRun = result.run;
+  return {
+    requestPlanSha256: result.requestPlan.requestPlanSha256,
+    judgmentRunSha256: result.run.judgmentRunSha256,
+    provider: result.run.provider,
+    model: result.run.model,
+    questionId: result.run.questionId,
+    questionVersion: result.run.questionVersion,
+    maxLiveQuestions: result.run.maxLiveQuestions,
+    providerRequestCount: result.run.providerRequestCount,
+    skipped: result.run.counts.skipped,
+    skipReason: result.run.rows[0].reason,
+    liveJudgmentsCollected: result.judgments.length,
+    authority: result.run.authority,
+  };
+});
+
+await stage('M6-promotion-guard', async () => {
+  if (!discovery) throw new Error('M6 guard requires M5 output');
+  const first = report.observations.packet.hypotheses[0];
+  if (!first) {
+    return {
+      state: 'not-applicable',
+      reason: 'M5 emitted no hypothesis',
+    };
+  }
+  try {
+    specApi.buildTestSpecification({
+      packet: report.observations.packet,
+      hypothesisId: first.id,
+    });
+  } catch (error) {
+    if (/requires confirmed validation before test specification/.test(String(error?.message))) {
+      return {
+        state: 'correctly-blocked',
+        hypothesisId: first.id,
+        reason: 'runtime-validation-required-before-M6',
+      };
+    }
+    throw error;
+  }
+  throw new Error('M6 unexpectedly promoted an unvalidated non-mutant hypothesis');
+});
+
+delete report._graph;
+
+const passed = Object.values(report.stages).filter((x) => x.status === 'pass').length;
+const failed = Object.values(report.stages).filter((x) => x.status === 'fail').length;
+const deepest = [
+  'M10-relational-judgment-plan',
+  'M9-relational-case-composer',
+  'M8-relational-evidence',
+  'M7-candidate-execution',
+  'M7-test-candidate',
+  'M6-test-specification',
+  'M6-promotion-guard',
+  'M5-runtime-validation',
+  'M5-coverage-discovery',
+  'M4-change-impact',
+  'M3.5-scip-evidence-graph',
+  'M3.5-typescript-shards',
+  'M2-history-evidence',
+  'M1-repository-inventory',
+  'M0-doctor',
+].find((id) => report.stages[id]?.status === 'pass') ?? null;
+
+report.summary = {
+  stageCount: Object.keys(report.stages).length,
+  passed,
+  failed,
+  deepestPassingStage: deepest,
+  generatedCoverageHypotheses:
+    report.stages['M5-coverage-discovery']?.value?.hypothesisCount ?? null,
+  validatedCoverageHypotheses:
+    report.stages['M5-runtime-validation']?.status === 'pass' ? 1 : 0,
+  m6ReadyForExecution:
+    report.stages['M6-test-specification']?.value?.readyForExecution ?? null,
+  m7CandidateSha256:
+    report.stages['M7-test-candidate']?.value?.candidateSha256 ?? null,
+  m7CandidateExecuted:
+    report.stages['M7-candidate-execution']?.status === 'pass',
+  m8RelationalCaseSha256:
+    report.stages['M8-relational-evidence']?.value?.caseSha256 ?? null,
+  m9RelationalCaseCount:
+    report.stages['M9-relational-case-composer']?.value?.caseCount ?? null,
+  m10RequestPlanSha256:
+    report.stages['M10-relational-judgment-plan']?.value?.requestPlanSha256 ?? null,
+  m10ProviderRequestCount:
+    report.stages['M10-relational-judgment-plan']?.value?.providerRequestCount ?? null,
+  m10LiveJudgmentsCollected:
+    report.stages['M10-relational-judgment-plan']?.value?.liveJudgmentsCollected ?? null,
+  safeToNarrow:
+    report.stages['M4-change-impact']?.value?.safeToNarrow ?? null,
+  verdict: failed === 0
+    ? 'portable-through-M10-planning-with-live-provider-fail-closed'
+    : 'partial-portability',
+};
+
+await writeFile(outputPath, JSON.stringify(report, null, 2) + '\n', 'utf8');
+console.log(JSON.stringify(report.summary, null, 2));
+if (failed > 0) process.exitCode = 1;

@@ -1,0 +1,114 @@
+name: H19 portability probe
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/h19-portability.yml"
+      - "scripts/h19-portability-probe.mjs"
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    name: H19 on yzt-digital
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      TARGET_SOURCE_REVISION: 143b7a809826a1ac6f3b890c48384fcfca8635d9
+      TARGET_CHANGE_REVISION: 25f4e13b8f4bc116efc83a9fc6d5ac42a7211c58
+      H19_SOURCE_REVISION: d1f900da997670a3c76816031bc15555be26f119
+      SCIP_DECODER_ID: db62094c7f9d464d0a6d9fd7815fcf3c9214b4c2
+
+    steps:
+      - name: Checkout probe harness
+        uses: actions/checkout@v4
+        with:
+          path: harness
+          persist-credentials: false
+
+      - name: Checkout frozen yzt.digital target
+        uses: actions/checkout@v4
+        with:
+          repository: ziyabeey/yzt-digital
+          ref: ${{ env.TARGET_SOURCE_REVISION }}
+          path: target
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Checkout frozen H19 source
+        uses: actions/checkout@v4
+        with:
+          repository: ziyabeey/randevu
+          ref: ${{ env.H19_SOURCE_REVISION }}
+          path: h19-source
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Node 22 target runtime
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Syntax-check H19 probe harness
+        run: node --check harness/scripts/h19-portability-probe.mjs
+
+      - name: Install target and H19 dependencies
+        run: |
+          set -euo pipefail
+          npm install --prefix target --no-audit --no-fund
+          npm install --prefix h19-source/tools/h19-kit --ignore-scripts --no-audit --no-fund
+          npm install --global @sourcegraph/scip-typescript@0.4.0
+
+      - name: Install Chromium for H19 runtime validation
+        run: |
+          set -euo pipefail
+          (
+            cd target
+            npx playwright install --with-deps chromium
+          )
+
+      - name: Set up Go for pinned SCIP decoder
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.25.0"
+          cache: false
+
+      - name: Build pinned SCIP decoder
+        run: |
+          set -euo pipefail
+          decoder="${RUNNER_TEMP}/scip-code"
+          mkdir -p "${decoder}"
+          git -C "${decoder}" init
+          git -C "${decoder}" remote add origin https://github.com/scip-code/scip.git
+          git -C "${decoder}" fetch --depth=1 origin "${SCIP_DECODER_ID}"
+          git -C "${decoder}" checkout --detach FETCH_HEAD
+          (
+            cd "${decoder}"
+            go build -o "${RUNNER_TEMP}/scip-h19" ./cmd/scip
+          )
+          "${RUNNER_TEMP}/scip-h19" --version
+
+      - name: Run H19 against frozen yzt.digital
+        env:
+          TARGET_ROOT: ${{ github.workspace }}/target
+          H19_KIT_ROOT: ${{ github.workspace }}/h19-source/tools/h19-kit
+          H19_REPORT: ${{ runner.temp }}/h19-portability-report.json
+          SCIP_EXECUTABLE: ${{ runner.temp }}/scip-h19
+        run: node harness/scripts/h19-portability-probe.mjs
+
+      - name: Publish probe summary
+        if: always()
+        run: |
+          if [ -s "${RUNNER_TEMP}/h19-portability-report.json" ]; then
+            jq '.summary, .stages["M3.5-scip-evidence-graph"], .stages["M4-change-impact"], .stages["M5-coverage-discovery"], .stages["M5-runtime-validation"], .stages["M6-test-specification"], .stages["M7-test-candidate"], .stages["M7-candidate-execution"], .stages["M8-relational-evidence"], .stages["M9-relational-case-composer"], .stages["M10-relational-judgment-plan"], .stages["M6-promotion-guard"]'               "${RUNNER_TEMP}/h19-portability-report.json" >> "${GITHUB_STEP_SUMMARY}"
+          fi
+
+      - name: Upload H19 portability report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: h19-yzt-digital-portability-001
+          path: ${{ runner.temp }}/h19-portability-report.json
+          if-no-files-found: error
