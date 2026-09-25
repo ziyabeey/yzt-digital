@@ -1,4 +1,6 @@
 import { Manifesto } from "@/components/Manifesto";
+import { MaterialField } from "@/components/MaterialField";
+import { SitePhysicsDirector } from "@/components/SitePhysicsDirector";
 
 const projects = [
   {
@@ -30,6 +32,11 @@ const projects = [
 export default function Home() {
   return (
     <main>
+      <div className="site-material" aria-hidden="true">
+        <MaterialField />
+      </div>
+      <SitePhysicsDirector />
+
       <header className="site-header">
         <a className="wordmark" href="#index" aria-label="yzt.digital ana sayfa">
           YZT.DIGITAL
@@ -43,8 +50,8 @@ export default function Home() {
           <a href="#about">HAKKIMDA</a>
         </nav>
 
-        <div className="status">
-          <span className="status-dot" />
+        <div className="status" aria-label="Durum: üretiyor">
+          <span className="status-dot" aria-hidden="true" />
           ÜRETİYOR
         </div>
       </header>
@@ -54,7 +61,11 @@ export default function Home() {
       <section className="identity-section" id="about">
         <div className="section-kicker">YUSUF ZİYA TERZİOĞLU</div>
         <div className="identity-copy">
-          <h1>Malzeme değişiyor.<br />Merak aynı kalıyor.</h1>
+          <h1>
+            Malzeme değişiyor.
+            <br />
+            Merak aynı kalıyor.
+          </h1>
           <p>
             İletişim tasarımcısı ve sistem kurucusu. Ürünler, sistemler,
             mekânlar, kültür ve deneyler arasında çalışıyorum.
@@ -94,7 +105,9 @@ export default function Home() {
               </div>
               <h2>{project.title}</h2>
               <p>{project.description}</p>
-              <span className="project-arrow" aria-hidden="true">↗</span>
+              <span className="project-arrow" aria-hidden="true">
+                ↗
+              </span>
             </article>
           ))}
         </div>
