@@ -102,7 +102,7 @@ jobs:
         if: always()
         run: |
           if [ -s "${RUNNER_TEMP}/h19-portability-report.json" ]; then
-            jq '.summary, .stages["M3.5-scip-evidence-graph"], .stages["M4-change-impact"], .stages["M5-coverage-discovery"], .stages["M5-runtime-validation"], .stages["M6-test-specification"], .stages["M7-test-candidate"], .stages["M7-candidate-execution"], .stages["M6-promotion-guard"]'               "${RUNNER_TEMP}/h19-portability-report.json" >> "${GITHUB_STEP_SUMMARY}"
+            jq '.summary, .stages["M3.5-scip-evidence-graph"], .stages["M4-change-impact"], .stages["M5-coverage-discovery"], .stages["M5-runtime-validation"], .stages["M6-test-specification"], .stages["M7-test-candidate"], .stages["M7-candidate-execution"], .stages["M8-relational-evidence"], .stages["M9-relational-case-composer"], .stages["M6-promotion-guard"]'               "${RUNNER_TEMP}/h19-portability-report.json" >> "${GITHUB_STEP_SUMMARY}"
           fi
 
       - name: Upload H19 portability report
