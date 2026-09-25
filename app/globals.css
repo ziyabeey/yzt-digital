@@ -24,6 +24,8 @@ body {
   margin: 0;
   max-width: 100%;
   overflow-x: clip;
+  overscroll-behavior-x: none;
+  touch-action: pan-y;
   background: var(--bg);
   color: var(--fg);
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
@@ -40,6 +42,12 @@ main {
 a {
   color: inherit;
   text-decoration: none;
+}
+
+a:focus-visible,
+button:focus-visible {
+  outline: 1px solid var(--fg);
+  outline-offset: 5px;
 }
 
 ::selection {
@@ -573,12 +581,83 @@ a {
   color: #5d5d59;
 }
 
-.site-footer span:nth-child(2) {
-  text-align: center;
+.footer-links {
+  justify-self: center;
+  display: flex;
+  gap: clamp(16px, 2vw, 28px);
+  color: #777772;
+}
+
+.footer-links a {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  transition: color 180ms ease;
+}
+
+.footer-links a:hover,
+.footer-links a:focus-visible {
+  color: var(--fg);
 }
 
 .site-footer span:last-child {
   text-align: right;
+}
+
+
+.not-found {
+  min-height: 100svh;
+  display: grid;
+  grid-template-columns: minmax(120px, 0.4fr) minmax(0, 1.6fr);
+  grid-template-rows: auto 1fr auto;
+  gap: 32px;
+  padding:
+    max(34px, env(safe-area-inset-top))
+    max(var(--pad), env(safe-area-inset-right))
+    max(34px, env(safe-area-inset-bottom))
+    max(var(--pad), env(safe-area-inset-left));
+}
+
+.not-found-code,
+.not-found-equation {
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  color: var(--muted);
+}
+
+.not-found-copy {
+  grid-column: 2;
+  align-self: center;
+}
+
+.not-found-copy h1 {
+  margin: 0;
+  font-family: "Iowan Old Style", "Baskerville", "Times New Roman", serif;
+  font-size: clamp(4rem, 10vw, 11rem);
+  line-height: 0.84;
+  letter-spacing: -0.06em;
+  font-weight: 400;
+}
+
+.not-found-copy p {
+  margin: 38px 0 34px;
+  max-width: 430px;
+  font-size: clamp(1.05rem, 1.6vw, 1.5rem);
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+.not-found-copy a {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+}
+
+.not-found-equation {
+  grid-column: 2;
+  justify-self: end;
 }
 
 .sr-only {
@@ -1135,9 +1214,31 @@ a {
     padding-bottom: max(38px, env(safe-area-inset-bottom));
   }
 
-  .site-footer span:nth-child(2),
+  .footer-links {
+    justify-self: start;
+    flex-wrap: wrap;
+  }
+
   .site-footer span:last-child {
     text-align: left;
+  }
+
+  .not-found {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr auto;
+  }
+
+  .not-found-copy,
+  .not-found-equation {
+    grid-column: 1;
+  }
+
+  .not-found-copy h1 {
+    font-size: clamp(3.6rem, 16vw, 7rem);
+  }
+
+  .not-found-equation {
+    justify-self: start;
   }
 }
 
