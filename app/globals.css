@@ -397,7 +397,7 @@ a {
   grid-template-columns: minmax(150px, 0.42fr) minmax(260px, 1fr) minmax(220px, 0.7fr) 28px;
   align-items: center;
   gap: 28px;
-  min-height: 34svh;
+  min-height: 52svh;
   border-top: 1px solid var(--hairline);
   transition: padding 300ms cubic-bezier(.2,.7,.2,1);
 }
@@ -787,7 +787,8 @@ a {
   .project-row {
     grid-template-columns: 1fr auto;
     gap: 18px;
-    padding: 38px 0 46px;
+    min-height: 58svh;
+    padding: 48px 0 54px;
   }
 
   .project-meta {
