@@ -54,13 +54,13 @@
 - [x] /archive kronolojisi
 
 ## M05 — Yayın
-- [ ] dependency install + typecheck
-- [ ] production build
-- [ ] vinext compatibility check — CF-02 gate hazır
+- [x] dependency install + typecheck — run #10
+- [x] production build — Next 16 production build green
+- [x] vinext compatibility check — green
 - [x] Cloudflare Workers config — vite.config.ts + wrangler.jsonc
-- [ ] preview deploy — manuel Cloudflare preview workflow hazır, secret ve çalışan runner bekliyor
+- [x] preview deploy — yzt-digital-preview.ziyabeey1.workers.dev
 - [ ] yzt.digital custom domain
 - [ ] www → apex yönlendirme
 - [x] metadata / sitemap / robots / Person + WebSite structured data
 - [x] OG / Twitter görsel sistemi — 19-segment file-based metadata route
-- [ ] Lighthouse + reduced-motion + mobile smoke
+- [ ] Lighthouse + reduced-motion + mobile smoke — reduced-motion + 24/24 mobile smoke green; Lighthouse kaldı
