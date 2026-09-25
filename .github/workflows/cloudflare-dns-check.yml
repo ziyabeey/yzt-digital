@@ -33,3 +33,11 @@ jobs:
           dig +short www.yzt.digital CNAME || true
           echo "WWW_A:"
           dig +short www.yzt.digital A || true
+          echo "AUTHORITATIVE_A:"
+          dig +short @liz.ns.cloudflare.com yzt.digital A || true
+          echo "AUTHORITATIVE_CNAME:"
+          dig +short @liz.ns.cloudflare.com yzt.digital CNAME || true
+          echo "AUTHORITATIVE_WWW_A:"
+          dig +short @liz.ns.cloudflare.com www.yzt.digital A || true
+          echo "AUTHORITATIVE_WWW_CNAME:"
+          dig +short @liz.ns.cloudflare.com www.yzt.digital CNAME || true
