@@ -169,7 +169,11 @@ export default function Home() {
 
       <footer className="site-footer">
         <span>YZT.DIGITAL</span>
-        <span>İSTANBUL / 2026</span>
+        <div className="footer-links" aria-label="Kamusal profiller">
+          <a href="https://www.linkedin.com/in/ziyabey" target="_blank" rel="noreferrer">LINKEDIN</a>
+          <a href="https://www.behance.net/ziyaterzi" target="_blank" rel="noreferrer">BEHANCE</a>
+          <a href="https://medium.com/@ziyabeey1" target="_blank" rel="noreferrer">MEDIUM</a>
+        </div>
         <span>YUSUF ZİYA TERZİOĞLU</span>
       </footer>
     </main>
