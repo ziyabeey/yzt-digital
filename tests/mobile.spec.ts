@@ -125,16 +125,20 @@ test("aynı 19 modül baştan finale kadar biçim değiştiriyor", async ({ page
 
   const modules = page.locator(".material-module");
   await expect(modules).toHaveCount(19);
+  await expect(page.locator(".site-material")).toHaveAttribute(
+    "data-physics-ready",
+    "true",
+  );
 
-  const initial = await modules.nth(0).getAttribute("style");
+  const initial = await modules.nth(0).getAttribute("transform");
 
   await page.locator("#lab").scrollIntoViewIfNeeded();
   await page.waitForTimeout(180);
-  const lab = await modules.nth(0).getAttribute("style");
+  const lab = await modules.nth(0).getAttribute("transform");
 
   await page.locator("#final").scrollIntoViewIfNeeded();
   await page.waitForTimeout(180);
-  const final = await modules.nth(0).getAttribute("style");
+  const final = await modules.nth(0).getAttribute("transform");
 
   await expect(modules).toHaveCount(19);
   expect(lab).not.toBe(initial);
@@ -152,6 +156,10 @@ test("biyografik sekans aynı materyali altı duruma taşır", async ({ page }) 
 
   const labels = page.locator(".material-label");
   await expect(labels).toHaveCount(6);
+  await expect(page.locator(".site-material")).toHaveAttribute(
+    "data-physics-ready",
+    "true",
+  );
 
   const sectionTop = await about.evaluate(
     (element) => element.getBoundingClientRect().top + window.scrollY,
@@ -171,16 +179,12 @@ test("biyografik sekans aynı materyali altı duruma taşır", async ({ page }) 
     await page.waitForTimeout(120);
 
     const active = await labels.evaluateAll((items) => {
-      const ranked = items
-        .map((item) => ({
-          text: item.textContent?.trim() ?? "",
-          opacity: Number.parseFloat(
-            window.getComputedStyle(item).opacity || "0",
-          ),
-        }))
-        .sort((a, b) => b.opacity - a.opacity);
+      const current = items.find(
+        (item) =>
+          (item as HTMLElement).dataset.activeMaterial === "true",
+      );
 
-      return ranked[0]?.text ?? "";
+      return current?.textContent?.trim() ?? "";
     });
 
     seen.push(active);
