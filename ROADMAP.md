@@ -6,21 +6,36 @@
 - [x] Sabit minimal navigasyon
 - [x] Manifesto için scroll tabanlı ilk GSAP timeline
 - [x] Reduced-motion fallback
+- [x] Site Physics v0.1
+- [x] 19 kalıcı SVG modülü
+- [x] SEE / BREAK / WONDER / BUILD geometrileri
+- [x] 19-gon + 7i mod 19 tabanlı dönüşüm
+- [x] Hero timeline ile ortak materyali senkronla
 - [ ] Gerçek tarayıcıda ritim ve breakpoint ayarı
-- [ ] Hero metnindeki SPLIT / REORDER hareketlerini görsel olarak ince ayarla
+- [ ] 19 modülün opaklık / ölçek dengesini ince ayarla
+- [ ] Fade bağımlılığını azalt; metin geçişlerini daha fiziksel yap
+
+## M01.5 — Typography Morph
+- [ ] 19 segmentle çözülebilecek glyph gramerini tasarla
+- [ ] SİSTEM glyph deneyi
+- [ ] DENEY glyph deneyi
+- [ ] KURARIM glyph deneyi
+- [ ] DOM metin ↔ SVG materyal senkron geçişi
+- [ ] 10=10 korunum testini her sahnede doğrula
 
 ## M02 — Biyografik dönüşüm
 - [ ] BEDEN → SES → GÖRÜNTÜ → MEKÂN → SİSTEM → ZEKÂ
 - [ ] “Malzeme değişiyor. Merak aynı kalıyor.” kilit anı
+- [ ] Aynı 19 modülü biyografik dönüşümde yeniden kullan
 - [ ] Dalí esintisini zamanlama ve hizalama üzerinden ekle
 - [ ] Mobil koreografiyi ayrı ayarla
 
-## M03 — Work
-- [ ] Kepenk.ai
-- [ ] YOTE
-- [ ] KLDRM
-- [ ] H19 / Jev
-- [ ] Her projenin kendine özgü ama aynı sistemden türeyen motion karakteri
+## M03 — Work / aynı madde, dört lehçe
+- [ ] Kepenk.ai → grid / slot / akış
+- [ ] YOTE → alan / katman / mekân
+- [ ] KLDRM → ritim / zaman / ses izi
+- [ ] H19 / Jev → node / edge / topoloji
+- [ ] Projeler arası geçişte 19 modülü koru
 
 ## M04 — Notes + Public Archive
 - [ ] Medium yazıları
@@ -31,6 +46,8 @@
 - [ ] /archive kronolojisi
 
 ## M05 — Yayın
+- [ ] dependency install + typecheck
+- [ ] production build
 - [ ] vinext compatibility check
 - [ ] Cloudflare Workers config
 - [ ] preview deploy
