@@ -244,6 +244,18 @@ export function SitePhysicsDirector() {
           },
         });
 
+        const materialRoot =
+          document.querySelector<HTMLElement>(".site-material");
+
+        const lockMaterialState = (state: MaterialPresetName) => {
+          const preset = getMaterialPreset(state, viewport);
+          applyMix(modules, preset, preset, 1);
+
+          if (materialRoot) {
+            materialRoot.dataset.currentMaterialState = state;
+          }
+        };
+
         const projectRows = Array.from(
           document.querySelectorAll<HTMLElement>(".project-row"),
         );
@@ -274,6 +286,24 @@ export function SitePhysicsDirector() {
           }),
         );
 
+        const projectStateLocks = projectRows
+          .map((row) => {
+            const state = row.dataset.projectState as
+              | MaterialPresetName
+              | undefined;
+
+            if (!state) return null;
+
+            return ScrollTrigger.create({
+              trigger: row,
+              start: "top 33%",
+              end: "bottom 33%",
+              onEnter: () => lockMaterialState(state),
+              onEnterBack: () => lockMaterialState(state),
+            });
+          })
+          .filter((trigger): trigger is ScrollTrigger => trigger !== null);
+
         const triggers = transitions.map((transition) => {
           const from = getMaterialPreset(transition.from, viewport);
           const to = getMaterialPreset(transition.to, viewport);
@@ -294,7 +324,12 @@ export function SitePhysicsDirector() {
                   (conditions.mobile ? 0.62 : 1),
               );
             },
-            onLeave: () => applyMix(modules, to, to, 1),
+            onLeave: () => {
+              applyMix(modules, to, to, 1);
+              if (materialRoot) {
+                materialRoot.dataset.currentMaterialState = transition.to;
+              }
+            },
             onEnterBack: (self) =>
               applyMix(
                 modules,
@@ -304,13 +339,19 @@ export function SitePhysicsDirector() {
                 (transition.temporalAmount ?? 0) *
                   (conditions.mobile ? 0.62 : 1),
               ),
-            onLeaveBack: () => applyMix(modules, from, from, 1),
+            onLeaveBack: () => {
+              applyMix(modules, from, from, 1);
+              if (materialRoot) {
+                materialRoot.dataset.currentMaterialState = transition.from;
+              }
+            },
           });
         });
 
         return () => {
           identityTrigger.kill();
           projectTextTriggers.forEach((trigger) => trigger.kill());
+          projectStateLocks.forEach((trigger) => trigger.kill());
           triggers.forEach((trigger) => trigger.kill());
         };
       },
