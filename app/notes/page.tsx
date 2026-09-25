@@ -1,6 +1,7 @@
 import { notes } from "@/content/publicArchive";
 
 export const metadata = {
+  alternates: { canonical: "/notes" },
   title: "Notlar",
   description: "Yusuf Ziya Terzioğlu'nun yazıları ve düşünce notları.",
 };
