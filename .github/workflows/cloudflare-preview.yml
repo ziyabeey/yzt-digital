@@ -10,6 +10,8 @@ on:
       - "app/**"
       - "components/**"
       - "content/**"
+      - "tests/**"
+      - "playwright.config.ts"
       - "package.json"
       - "vite.config.ts"
       - "wrangler.jsonc"
@@ -38,6 +40,9 @@ jobs:
 
       - name: Typecheck
         run: npm run typecheck
+
+      - name: Next production build
+        run: npm run build
 
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
