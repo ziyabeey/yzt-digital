@@ -207,3 +207,16 @@ test("dört proje aynı 19 parçaya dört farklı dil veriyor", async ({ page })
 
   expect(new Set(signatures).size).toBe(4);
 });
+
+
+test("notes ve archive rotaları mobilde taşmadan açılıyor", async ({ page }) => {
+  await page.goto("/notes");
+  await expect(page.getByRole("heading", { name: /Bir şeyi anlamaya/i })).toBeVisible();
+  await expect(page.locator(".note-row")).toHaveCount(2);
+  await expectNoHorizontalOverflow(page);
+
+  await page.goto("/archive");
+  await expect(page.getByRole("heading", { name: /Malzeme değişti/i })).toBeVisible();
+  await expect(page.locator(".archive-row")).toHaveCount(9);
+  await expectNoHorizontalOverflow(page);
+});
