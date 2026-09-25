@@ -1,6 +1,7 @@
 import { Manifesto } from "@/components/Manifesto";
 import { MaterialField } from "@/components/MaterialField";
 import { SitePhysicsDirector } from "@/components/SitePhysicsDirector";
+import { MobileNav } from "@/components/MobileNav";
 
 const projects = [
   {
@@ -54,6 +55,8 @@ export default function Home() {
           <span className="status-dot" aria-hidden="true" />
           ÜRETİYOR
         </div>
+
+        <MobileNav />
       </header>
 
       <Manifesto />
