@@ -27,13 +27,45 @@ function mix(
   };
 }
 
+function clamp01(value: number) {
+  return Math.max(0, Math.min(1, value));
+}
+
+function smoothstep(value: number) {
+  const p = clamp01(value);
+  return p * p * (3 - 2 * p);
+}
+
+function temporalProgress(
+  progress: number,
+  index: number,
+  amount: number,
+) {
+  if (amount <= 0) return smoothstep(progress);
+
+  const phase = (((index * 7) % 19) / 18 - 0.5) * amount;
+  const base = smoothstep(progress);
+  const shifted = clamp01(
+    base + phase * Math.sin(Math.PI * base),
+  );
+
+  return smoothstep(shifted);
+}
+
 function applyMix(
   modules: SVGGElement[],
   from: MaterialTransform[],
   to: MaterialTransform[],
   progress: number,
+  temporalAmount = 0,
 ) {
-  const state = from.map((item, index) => mix(item, to[index], progress));
+  const state = from.map((item, index) =>
+    mix(
+      item,
+      to[index],
+      temporalProgress(progress, index, temporalAmount),
+    ),
+  );
 
   gsap.set(modules, {
     x: (index: number) => state[index].x,
@@ -52,6 +84,7 @@ type Transition = {
   to: MaterialPresetName;
   start?: string;
   end?: string;
+  temporalAmount?: number;
 };
 
 const identityStates: MaterialPresetName[] = [
@@ -70,6 +103,7 @@ const transitions: Transition[] = [
     to: "kepenk",
     start: "top bottom",
     end: "top 40%",
+    temporalAmount: 0.055,
   },
   {
     trigger: "#project-yote",
@@ -77,6 +111,7 @@ const transitions: Transition[] = [
     to: "yote",
     start: "top 82%",
     end: "top 34%",
+    temporalAmount: 0.085,
   },
   {
     trigger: "#project-kldrm",
@@ -84,6 +119,7 @@ const transitions: Transition[] = [
     to: "kldrm",
     start: "top 82%",
     end: "top 34%",
+    temporalAmount: 0.12,
   },
   {
     trigger: "#project-h19",
@@ -91,6 +127,7 @@ const transitions: Transition[] = [
     to: "h19",
     start: "top 82%",
     end: "top 34%",
+    temporalAmount: 0.07,
   },
   {
     trigger: "#lab",
@@ -98,6 +135,7 @@ const transitions: Transition[] = [
     to: "deney",
     start: "top 92%",
     end: "top 40%",
+    temporalAmount: 0.09,
   },
   {
     trigger: "#notes",
@@ -105,6 +143,7 @@ const transitions: Transition[] = [
     to: "see",
     start: "top 92%",
     end: "top 42%",
+    temporalAmount: 0.04,
   },
   {
     trigger: "#final",
@@ -112,6 +151,7 @@ const transitions: Transition[] = [
     to: "kurarim",
     start: "top 92%",
     end: "top 34%",
+    temporalAmount: 0.11,
   },
 ];
 
@@ -188,6 +228,7 @@ export function SitePhysicsDirector() {
               identityPresets[index],
               identityPresets[index + 1],
               localProgress,
+              conditions.mobile ? 0.045 : 0.08,
             );
             setActiveLabel(index);
           },
@@ -214,10 +255,25 @@ export function SitePhysicsDirector() {
             invalidateOnRefresh: true,
             onUpdate: (self) => {
               if (!self.isActive) return;
-              applyMix(modules, from, to, self.progress);
+              applyMix(
+                modules,
+                from,
+                to,
+                self.progress,
+                (transition.temporalAmount ?? 0) *
+                  (conditions.mobile ? 0.62 : 1),
+              );
             },
             onLeave: () => applyMix(modules, to, to, 1),
-            onEnterBack: (self) => applyMix(modules, from, to, self.progress),
+            onEnterBack: (self) =>
+              applyMix(
+                modules,
+                from,
+                to,
+                self.progress,
+                (transition.temporalAmount ?? 0) *
+                  (conditions.mobile ? 0.62 : 1),
+              ),
             onLeaveBack: () => applyMix(modules, from, from, 1),
           });
         });
