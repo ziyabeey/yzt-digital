@@ -134,7 +134,8 @@ export default function Home() {
       <section className="lab-section" id="lab">
         <div className="section-kicker">LAB</div>
         <div className="lab-copy">
-          <p className="lab-word">DENEY</p>
+          <p className="lab-word" aria-hidden="true">DENEY</p>
+          <span className="sr-only">DENEY</span>
           <div className="lab-index">
             <span>H19</span>
             <span>JEV</span>
