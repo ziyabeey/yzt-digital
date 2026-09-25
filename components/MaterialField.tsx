@@ -5,7 +5,9 @@ export type MaterialPresetName =
   | "break"
   | "wonder"
   | "build"
-  | "system";
+  | "system"
+  | "deney"
+  | "kurarim";
 
 export type MaterialViewport = "desktop" | "mobile";
 
@@ -162,6 +164,121 @@ function build(
   };
 }
 
+
+type Stroke = [x: number, y: number, rotation: number, length: number];
+
+function fitWord(
+  strokes: Stroke[],
+  viewport: MaterialViewport,
+  opacityDesktop = 0.34,
+): MaterialTransform[] {
+  if (strokes.length !== COUNT) {
+    throw new Error(`Material word must contain exactly ${COUNT} strokes`);
+  }
+
+  const scale = viewport === "mobile" ? 0.76 : 1;
+  const opacity = viewport === "mobile" ? opacityDesktop * 0.72 : opacityDesktop;
+
+  return strokes.map(([x, y, rotation, length]) =>
+    segment(
+      CX + (x - CX) * scale,
+      y,
+      rotation,
+      length * scale,
+      opacity,
+    ),
+  );
+}
+
+function deney(viewport: MaterialViewport): MaterialTransform[] {
+  const top = 292;
+  const mid = 350;
+  const bottom = 408;
+  const h = 62;
+  const halfV = 58;
+  const fullV = 116;
+  const xs = [286, 392, 500, 608, 716];
+
+  const strokes: Stroke[] = [
+    // D = 5
+    [xs[0] - 28, 350, 90, fullV],
+    [xs[0], top, 0, h],
+    [xs[0] + 33, 321, 62, halfV],
+    [xs[0] + 33, 379, -62, halfV],
+    [xs[0], bottom, 0, h],
+
+    // E = 4
+    [xs[1] - 28, 350, 90, fullV],
+    [xs[1], top, 0, h],
+    [xs[1] - 2, mid, 0, h * 0.86],
+    [xs[1], bottom, 0, h],
+
+    // N = 3
+    [xs[2] - 25, 350, 90, fullV],
+    [xs[2], 350, 62, 132],
+    [xs[2] + 25, 350, 90, fullV],
+
+    // E = 4
+    [xs[3] - 28, 350, 90, fullV],
+    [xs[3], top, 0, h],
+    [xs[3] - 2, mid, 0, h * 0.86],
+    [xs[3], bottom, 0, h],
+
+    // Y = 3
+    [xs[4] - 15, 320, 55, 72],
+    [xs[4] + 15, 320, 125, 72],
+    [xs[4], 382, 90, 64],
+  ];
+
+  return fitWord(strokes, viewport, 0.32);
+}
+
+function kurarim(viewport: MaterialViewport): MaterialTransform[] {
+  const top = 298;
+  const mid = 350;
+  const bottom = 402;
+  const fullV = 104;
+  const h = 50;
+  const xs = [236, 325, 414, 503, 592, 681, 770];
+
+  const strokes: Stroke[] = [
+    // K = 3
+    [xs[0] - 18, mid, 90, fullV],
+    [xs[0] + 10, 325, -42, 72],
+    [xs[0] + 10, 375, 42, 72],
+
+    // U = 3
+    [xs[1] - 20, 344, 90, 92],
+    [xs[1], bottom, 0, 40],
+    [xs[1] + 20, 344, 90, 92],
+
+    // R = 3
+    [xs[2] - 20, mid, 90, fullV],
+    [xs[2] + 2, top, 0, h],
+    [xs[2] + 18, 370, 52, 78],
+
+    // A = 2
+    [xs[3] - 16, mid, -72, 112],
+    [xs[3] + 16, mid, 72, 112],
+
+    // R = 3
+    [xs[4] - 20, mid, 90, fullV],
+    [xs[4] + 2, top, 0, h],
+    [xs[4] + 18, 370, 52, 78],
+
+    // I = 1
+    [xs[5], mid, 90, fullV],
+
+    // M = 4
+    [xs[6] - 25, mid, 90, fullV],
+    [xs[6] - 11, 326, 58, 64],
+    [xs[6] + 11, 326, 122, 64],
+    [xs[6] + 25, mid, 90, fullV],
+  ];
+
+  return fitWord(strokes, viewport, 0.34);
+}
+
 function system(viewport: MaterialViewport): MaterialTransform[] {
   const opacity = viewport === "mobile" ? 0.16 : 0.2;
   const top = viewport === "mobile" ? 285 : 300;
@@ -202,6 +319,8 @@ export function getMaterialPreset(
   viewport: MaterialViewport = "desktop",
 ): MaterialTransform[] {
   if (name === "system") return system(viewport);
+  if (name === "deney") return deney(viewport);
+  if (name === "kurarim") return kurarim(viewport);
 
   return Array.from({ length: COUNT }, (_, index) => {
     if (name === "see") return see(index, viewport);
