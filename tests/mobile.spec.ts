@@ -252,9 +252,26 @@ test("404 sayfası aynı görsel dili korur ve taşmaz", async ({ page }) => {
   await expectNoHorizontalOverflow(page);
 });
 
-test("sosyal görsel route'ları PNG döndürür", async ({ request }) => {
-  for (const path of ["/opengraph-image", "/twitter-image"]) {
-    const response = await request.get(path);
+test("metadata sosyal görselleri erişilebilir PNG döndürür", async ({ page, request }) => {
+  await page.goto("/");
+
+  const imageUrls = await page.evaluate(() => {
+    const og = document
+      .querySelector('meta[property="og:image"]')
+      ?.getAttribute("content");
+    const twitter = document
+      .querySelector('meta[name="twitter:image"]')
+      ?.getAttribute("content");
+
+    return [og, twitter].filter(
+      (value): value is string => Boolean(value),
+    );
+  });
+
+  expect(imageUrls.length).toBe(2);
+
+  for (const url of imageUrls) {
+    const response = await request.get(url);
     expect(response.ok()).toBeTruthy();
     expect(response.headers()["content-type"]).toContain("image/png");
   }
