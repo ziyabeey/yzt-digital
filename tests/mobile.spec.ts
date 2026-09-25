@@ -217,6 +217,6 @@ test("notes ve archive rotaları mobilde taşmadan açılıyor", async ({ page }
 
   await page.goto("/archive");
   await expect(page.getByRole("heading", { name: /Malzeme değişti/i })).toBeVisible();
-  await expect(page.locator(".archive-row")).toHaveCount(9);
+  await expect(page.locator(".archive-row")).toHaveCount(10);
   await expectNoHorizontalOverflow(page);
 });
