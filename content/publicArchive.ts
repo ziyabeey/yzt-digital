@@ -57,6 +57,15 @@ export const publicTraces: PublicTrace[] = [
   {
     date: "2023-07-24",
     year: "2023",
+    title: "Ege'nin Sualtı Perisi",
+    source: "Behance",
+    kind: "DİJİTAL SANAT / ANLATI",
+    note: "Ege, algı, gerçeklik ve hayal arasındaki sınırı görsel hikâyeye çeviren seri.",
+    url: "https://www.behance.net/gallery/176048623/Egenin-Sualt-Perisi-Gercegin-Sihirli-Yansmalar",
+  },
+  {
+    date: "2023-07-24",
+    year: "2023",
     title: "Brandos Cafe Reels",
     source: "Behance",
     kind: "VİDEO / İÇERİK",
