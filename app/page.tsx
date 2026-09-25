@@ -139,6 +139,15 @@ export default function Home() {
         </div>
       </section>
 
+      <section className="final-section" id="final">
+        <div className="section-kicker">AYNI MADDE / BAŞKA DÜZEN</div>
+        <div className="final-copy">
+          <p className="final-equation">19 = 19</p>
+          <p className="final-sentence">Sonra gerçekten kurarım.</p>
+          <span className="sr-only">KURARIM</span>
+        </div>
+      </section>
+
       <footer className="site-footer">
         <span>YZT.DIGITAL</span>
         <span>İSTANBUL / 2026</span>
