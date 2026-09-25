@@ -13,6 +13,16 @@ export const metadata: Metadata = {
   },
   description:
     "Ürünler, sistemler, mekânlar, kültür ve deneyler. Yusuf Ziya Terzioğlu'nun yaşayan dijital indeksi.",
+  keywords: [
+    "Yusuf Ziya Terzioğlu",
+    "yzt.digital",
+    "iletişim tasarımı",
+    "sistem tasarımı",
+    "yapay zekâ",
+    "dijital ürün",
+    "yaratıcı teknoloji",
+  ],
+  category: "design",
   alternates: {
     canonical: "/",
   },
@@ -28,6 +38,12 @@ export const metadata: Metadata = {
     siteName: "yzt.digital",
     locale: "tr_TR",
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Yusuf Ziya Terzioğlu — yzt.digital",
+    description:
+      "Aynı materyal, başka düzen. Ürünler, sistemler, mekânlar, kültür ve deneyler.",
   },
 };
 
