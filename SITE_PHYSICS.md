@@ -78,3 +78,31 @@ Malzeme değişiyor. Merak aynı kalıyor.
 
 **Fizik**  
 Aynı materyal, başka düzen. 10 = 10.
+
+
+## Proje lehçeleri
+
+Aynı 19 modül WORK bölümünde dört ayrı dil konuşur:
+
+### Kepenk.ai
+Takvim / operasyon mantığı.
+4×4 ana grid + 9 aktif slot.
+Toplam ana modül: 19.
+
+### YOTE
+Parsel + kabin + sera + yeraltı çekirdeği + bağlantı.
+Mekânı nesne olarak değil, birbirine bağlı alanlar olarak anlatır.
+Toplam ana modül: 19.
+
+### KLDRM
+19 dikey ritim çubuğu.
+Uzunluklar deterministik envelope + pulse fonksiyonundan türetilir.
+Yeni ses grafiği asset'i yoktur.
+
+### H19 / Jev
+19 dış noktanın üç iç hub ile deterministik bağları.
+Bağ seçiminde modüler düzen kullanılır.
+Topoloji görünür olur ama dekoratif network görseline dönüşmez.
+
+WORK boyunca hiçbir proje yeni bir ana SVG sistemi oluşturmaz.
+Aynı 19 `.material-module` proje mantığına göre yeniden konumlanır.
