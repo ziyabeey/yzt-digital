@@ -116,6 +116,11 @@ a {
   box-shadow: 0 0 14px color-mix(in srgb, var(--accent) 60%, transparent);
 }
 
+.mobile-nav-toggle,
+.mobile-nav-panel {
+  display: none;
+}
+
 .manifesto {
   position: relative;
   z-index: 2;
@@ -525,7 +530,8 @@ a {
   }
 
   .site-header {
-    grid-template-columns: 1fr auto;
+    grid-template-columns: 1fr auto auto;
+    gap: 12px;
     padding-top: max(18px, env(safe-area-inset-top));
     padding-bottom: 18px;
     font-size: 10px;
@@ -537,6 +543,83 @@ a {
 
   .status {
     gap: 6px;
+  }
+
+  .mobile-nav-toggle {
+    display: inline-grid;
+    min-width: 48px;
+    min-height: 44px;
+    place-items: center;
+    justify-self: end;
+    border: 0;
+    padding: 0 2px;
+    background: transparent;
+    color: var(--fg);
+    font: inherit;
+    letter-spacing: 0.12em;
+    cursor: pointer;
+  }
+
+  .mobile-nav-panel {
+    position: fixed;
+    inset: 0;
+    z-index: 45;
+    display: grid;
+    grid-template-rows: 1fr auto;
+    padding:
+      max(96px, calc(env(safe-area-inset-top) + 78px))
+      max(var(--pad), env(safe-area-inset-right))
+      max(24px, env(safe-area-inset-bottom))
+      max(var(--pad), env(safe-area-inset-left));
+    background: rgba(0, 0, 0, 0.985);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition:
+      opacity 220ms ease,
+      visibility 220ms ease;
+  }
+
+  .mobile-nav-panel[data-open="true"] {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
+
+  .mobile-nav-panel nav {
+    align-self: center;
+    display: grid;
+    border-top: 1px solid var(--hairline);
+  }
+
+  .mobile-nav-panel nav a {
+    display: grid;
+    grid-template-columns: 42px 1fr;
+    align-items: center;
+    min-height: 76px;
+    border-bottom: 1px solid var(--hairline);
+    font-size: clamp(2rem, 9.5vw, 4.2rem);
+    line-height: 1;
+    letter-spacing: -0.045em;
+  }
+
+  .mobile-nav-panel nav a span {
+    align-self: start;
+    padding-top: 19px;
+    font-size: 8px;
+    line-height: 1;
+    letter-spacing: 0.14em;
+    color: var(--muted);
+  }
+
+  .mobile-nav-foot {
+    display: flex;
+    justify-content: space-between;
+    gap: 18px;
+    padding-top: 20px;
+    font-size: 8px;
+    letter-spacing: 0.14em;
+    color: var(--muted);
   }
 
   .site-material .material-field {
@@ -586,6 +669,11 @@ a {
   .scroll-cue {
     bottom: max(54px, calc(env(safe-area-inset-bottom) + 38px));
     font-size: 8px;
+  }
+
+  .site-header:has(.mobile-nav-panel[data-open="true"]) .status {
+    opacity: 0;
+    pointer-events: none;
   }
 
   .identity-section,
@@ -702,5 +790,9 @@ a {
 
   .scroll-cue {
     display: none;
+  }
+
+  .mobile-nav-panel {
+    transition: none;
   }
 }
