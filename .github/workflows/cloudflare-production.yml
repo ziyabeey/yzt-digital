@@ -74,6 +74,10 @@ jobs:
             {
               pattern: "yzt.digital",
               custom_domain: true
+            },
+            {
+              pattern: "www.yzt.digital",
+              custom_domain: true
             }
           ];
           fs.writeFileSync(path, JSON.stringify(config, null, 2) + "\n");
@@ -96,4 +100,22 @@ jobs:
             sleep 10
           done
           echo "Production domain did not become healthy."
+          exit 1
+
+      - name: Verify www redirect
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3 4 5 6; do
+            HEADERS=$(curl -sSI --max-time 20 https://www.yzt.digital/notes || true)
+            STATUS=$(echo "$HEADERS" | head -n 1 | awk '{print $2}')
+            LOCATION=$(echo "$HEADERS" | awk 'BEGIN{IGNORECASE=1} /^location:/ {gsub("\r",""); print $2}' | tail -n 1)
+            if [ "$STATUS" = "308" ] && [ "$LOCATION" = "https://yzt.digital/notes" ]; then
+              echo "www redirect is healthy."
+              exit 0
+            fi
+            echo "Waiting for www redirect propagation ($attempt/6)..."
+            sleep 10
+          done
+          echo "www redirect did not become healthy."
           exit 1
