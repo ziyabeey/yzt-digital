@@ -1,0 +1,57 @@
+name: live-lighthouse
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - verify/lighthouse
+    paths:
+      - ".lighthouse-trigger"
+      - ".github/workflows/live-lighthouse.yml"
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Lighthouse mobile audit
+        run: |
+          npx --yes lighthouse@13.5.0 https://yzt.digital             --chrome-flags="--headless --no-sandbox"             --output=json             --output-path=lighthouse.json             --only-categories=performance,accessibility,best-practices,seo             --quiet
+
+      - name: Report scores
+        run: |
+          node <<'NODE'
+          const fs = require("fs");
+          const report = JSON.parse(fs.readFileSync("lighthouse.json", "utf8"));
+          const c = report.categories;
+          const a = report.audits;
+          const pct = (score) => Math.round((score ?? 0) * 100);
+          console.log("LIGHTHOUSE");
+          console.log("performance=" + pct(c.performance.score));
+          console.log("accessibility=" + pct(c.accessibility.score));
+          console.log("best_practices=" + pct(c["best-practices"].score));
+          console.log("seo=" + pct(c.seo.score));
+          console.log("fcp=" + a["first-contentful-paint"].displayValue);
+          console.log("lcp=" + a["largest-contentful-paint"].displayValue);
+          console.log("tbt=" + a["total-blocking-time"].displayValue);
+          console.log("cls=" + a["cumulative-layout-shift"].displayValue);
+          console.log("speed_index=" + a["speed-index"].displayValue);
+          NODE
+
+      - name: Upload report
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-production
+          path: lighthouse.json
+          retention-days: 7
