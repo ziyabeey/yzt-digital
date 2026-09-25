@@ -685,6 +685,10 @@ export function getMaterialPreset(
 
 export const MATERIAL_COUNT = COUNT;
 
+function svgNumber(value: number) {
+  return Number(value.toFixed(4));
+}
+
 export function MaterialField() {
   const initial = getMaterialPreset("see", "desktop");
 
@@ -702,7 +706,7 @@ export function MaterialField() {
             className="material-module"
             data-material-index={index}
             key={index}
-            transform={`translate(${item.x} ${item.y}) rotate(${item.rotation}) scale(${item.scaleX} ${item.scaleY})`}
+            transform={`translate(${svgNumber(item.x)} ${svgNumber(item.y)}) rotate(${svgNumber(item.rotation)}) scale(${svgNumber(item.scaleX)} ${svgNumber(item.scaleY)})`}
             opacity={item.opacity}
           >
             <rect x="-36" y="-2" width="72" height="4" rx="2" />
