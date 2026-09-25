@@ -49,7 +49,7 @@
 - [x] Medium yazıları
 - [x] Behance işleri: doğrulanmış çekirdek arşiv
 - [x] Saatchi Art
-- [ ] LinkedIn / eski kamusal izler
+- [x] LinkedIn / eski kamusal izler: doğrulanmış Dieter Rams tasarım notu
 - [x] Yayınlanan archive kayıtlarında kaynak ve tarih doğrulaması
 - [x] /archive kronolojisi
 
