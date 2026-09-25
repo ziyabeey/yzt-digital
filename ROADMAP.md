@@ -38,11 +38,12 @@
 - [ ] Gerçek iOS Safari / Android Chrome preview doğrulaması
 
 ## M03 — Work / aynı madde, dört lehçe
-- [ ] Kepenk.ai → grid / slot / akış
-- [ ] YOTE → alan / katman / mekân
-- [ ] KLDRM → ritim / zaman / ses izi
-- [ ] H19 / Jev → node / edge / topoloji
-- [ ] Projeler arası geçişte 19 modülü koru
+- [x] Kepenk.ai → grid / slot / akış
+- [x] YOTE → alan / katman / mekân
+- [x] KLDRM → ritim / zaman / ses izi
+- [x] H19 / Jev → node / edge / topoloji
+- [x] Projeler arası geçişte 19 modülü koru
+- [x] Dört proje için benzersiz transform signature Playwright kontrolü
 
 ## M04 — Notes + Public Archive
 - [ ] Medium yazıları
