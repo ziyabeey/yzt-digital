@@ -58,9 +58,9 @@
 - [ ] production build
 - [ ] vinext compatibility check — CF-02 gate hazır
 - [x] Cloudflare Workers config — vite.config.ts + wrangler.jsonc
-- [ ] preview deploy — manuel Cloudflare preview workflow hazır
+- [ ] preview deploy — manuel Cloudflare preview workflow hazır, secret ve çalışan runner bekliyor
 - [ ] yzt.digital custom domain
 - [ ] www → apex yönlendirme
 - [x] metadata / sitemap / robots / Person + WebSite structured data
-- [ ] OG görsel sistemi
+- [x] OG / Twitter görsel sistemi — 19-segment file-based metadata route
 - [ ] Lighthouse + reduced-motion + mobile smoke
