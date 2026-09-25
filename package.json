@@ -9,9 +9,11 @@
     "typecheck": "tsc --noEmit",
     "test:e2e": "playwright test",
     "test:mobile": "playwright test --project=mobile-small --project=mobile-large",
-    "cloudflare:check": "npx vinext@1.0.0-beta.11 check",
-    "cloudflare:init": "npx vinext@1.0.0-beta.11 init",
-    "cloudflare:deploy": "npx @vinext/cloudflare deploy"
+    "cloudflare:check": "npx vinext check",
+    "cloudflare:init": "npx vinext init",
+    "cloudflare:deploy": "npx @vinext/cloudflare deploy",
+    "cloudflare:dry-run": "npx @vinext/cloudflare deploy --dry-run",
+    "cloudflare:preview": "npx @vinext/cloudflare deploy --preview"
   },
   "dependencies": {
     "gsap": "3.15.0",
