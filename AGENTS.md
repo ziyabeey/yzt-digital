@@ -64,3 +64,16 @@ Yeni bir animasyon bu fiillerden en az birine bağlanamıyorsa eklenmemelidir.
 5. Bu hâlâ yzt.digital mı?
 6. Sürrealizm kontrollü mü?
 7. Metin hâlâ rahat okunuyor mu?
+
+
+## Site Physics v0.1
+
+`SITE_PHYSICS.md` bu dosyayla birlikte zorunlu referanstır.
+
+- Ana görsel materyal 19 kalıcı modüldür.
+- Ana modülleri sahneler arasında silme / yeniden yaratma.
+- Yeni dekoratif obje eklemeden önce mevcut 19 modül ile çözülebilir mi diye kontrol et.
+- Ana korunum yasası: **10 = 10**.
+- Geometri için 19-gon ve deterministik modüler dönüşümler tercih edilir.
+- 19 bir iddia veya numeroloji açıklaması olarak değil, iç tasarım grameri olarak kullanılır.
+- Yazı / şekil / grid / diyagram mümkün olduğunca aynı materyal ailesinden türemelidir.
