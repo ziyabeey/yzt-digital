@@ -1,0 +1,49 @@
+name: cloudflare-dns-check
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - deploy/cloudflare-dns-check
+    paths:
+      - ".dns-check-trigger"
+      - ".github/workflows/cloudflare-dns-check.yml"
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+    steps:
+      - name: Find yzt.digital zone
+        id: zone
+        shell: bash
+        run: |
+          set -euo pipefail
+          RESPONSE=$(curl -fsS             -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN"             -H "Content-Type: application/json"             "https://api.cloudflare.com/client/v4/zones?name=yzt.digital")
+          ZONE_ID=$(echo "$RESPONSE" | jq -r '.result[0].id // empty')
+          if [ -z "$ZONE_ID" ]; then
+            echo "Zone yzt.digital not found"
+            exit 1
+          fi
+          echo "zone_id=$ZONE_ID" >> "$GITHUB_OUTPUT"
+          echo "Zone found."
+
+      - name: Inspect root hostname records
+        shell: bash
+        env:
+          ZONE_ID: ${{ steps.zone.outputs.zone_id }}
+        run: |
+          set -euo pipefail
+          RESPONSE=$(curl -fsS             -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN"             -H "Content-Type: application/json"             "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records?name=yzt.digital")
+          echo "$RESPONSE" | jq -r '
+            if (.result | length) == 0 then
+              "ROOT_RECORDS: none"
+            else
+              .result[] |
+              "ROOT_RECORD: id=\(.id) type=\(.type) name=\(.name) proxied=\(.proxied // false)"
+            end
+          '
