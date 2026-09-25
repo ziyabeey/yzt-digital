@@ -1,6 +1,7 @@
 import { publicTraces } from "@/content/publicArchive";
 
 export const metadata = {
+  alternates: { canonical: "/archive" },
   title: "Arşiv",
   description: "Yusuf Ziya Terzioğlu'nun kamusal üretim izleri.",
 };
