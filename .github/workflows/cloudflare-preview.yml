@@ -2,6 +2,9 @@ name: cloudflare-preview
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - preview/cloudflare
 
 jobs:
   preview:
