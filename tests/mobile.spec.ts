@@ -173,3 +173,37 @@ test("biyografik sekans aynı materyali altı duruma taşır", async ({ page }) 
   expect(new Set(seen).size).toBeGreaterThanOrEqual(4);
   await expectNoHorizontalOverflow(page);
 });
+
+
+test("dört proje aynı 19 parçaya dört farklı dil veriyor", async ({ page }) => {
+  await page.goto("/");
+
+  const modules = page.locator(".material-module");
+  await expect(modules).toHaveCount(19);
+
+  const selectors = [
+    "#project-kepenk",
+    "#project-yote",
+    "#project-kldrm",
+    "#project-h19",
+  ];
+
+  const signatures: string[] = [];
+
+  for (const selector of selectors) {
+    await page.locator(selector).scrollIntoViewIfNeeded();
+    await page.waitForTimeout(180);
+
+    const signature = await modules.evaluateAll((items) =>
+      items
+        .map((item) => item.getAttribute("style") ?? "")
+        .join("|"),
+    );
+
+    signatures.push(signature);
+    await expect(modules).toHaveCount(19);
+    await expectNoHorizontalOverflow(page);
+  }
+
+  expect(new Set(signatures).size).toBe(4);
+});
