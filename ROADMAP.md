@@ -63,4 +63,5 @@
 - [ ] www → apex yönlendirme
 - [x] metadata / sitemap / robots / Person + WebSite structured data
 - [x] OG / Twitter görsel sistemi — 19-segment file-based metadata route
-- [ ] Lighthouse + reduced-motion + mobile smoke — reduced-motion + 24/24 mobile smoke green; Lighthouse kaldı
+- [ ] Lighthouse + reduced-motion
+- [x] mobile smoke — 360×800 + 390×844 — reduced-motion + 24/24 mobile smoke green; Lighthouse kaldı
