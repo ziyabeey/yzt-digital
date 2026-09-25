@@ -2,6 +2,17 @@ name: cloudflare-preview
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - deploy/cloudflare-preview
+    paths:
+      - ".github/workflows/cloudflare-preview.yml"
+      - "app/**"
+      - "components/**"
+      - "content/**"
+      - "package.json"
+      - "vite.config.ts"
+      - "wrangler.jsonc"
 
 jobs:
   preview:
@@ -21,7 +32,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
 
       - name: Install
         run: npm install --no-audit --no-fund
