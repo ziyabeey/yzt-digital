@@ -19,6 +19,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          echo "NS:"
+          dig +short yzt.digital NS || true
+          echo "SOA:"
+          dig +short yzt.digital SOA || true
           echo "A:"
           dig +short yzt.digital A || true
           echo "AAAA:"
