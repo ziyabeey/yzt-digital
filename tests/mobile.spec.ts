@@ -124,3 +124,52 @@ test("aynı 19 modül baştan finale kadar biçim değiştiriyor", async ({ page
   expect(final).not.toBe(lab);
   await expectNoHorizontalOverflow(page);
 });
+
+
+test("biyografik sekans aynı materyali altı duruma taşır", async ({ page }) => {
+  await page.goto("/");
+
+  const about = page.locator("#about");
+  const box = await about.boundingBox();
+  expect(box).not.toBeNull();
+
+  const labels = page.locator(".material-label");
+  await expect(labels).toHaveCount(6);
+
+  const sectionTop = await about.evaluate(
+    (element) => element.getBoundingClientRect().top + window.scrollY,
+  );
+  const sectionHeight = await about.evaluate(
+    (element) => element.getBoundingClientRect().height,
+  );
+
+  const samples = [0.08, 0.24, 0.4, 0.56, 0.72, 0.9];
+  const seen: string[] = [];
+
+  for (const ratio of samples) {
+    await page.evaluate(
+      ({ y }) => window.scrollTo(0, y),
+      { y: sectionTop + sectionHeight * ratio },
+    );
+    await page.waitForTimeout(120);
+
+    const active = await labels.evaluateAll((items) => {
+      const ranked = items
+        .map((item) => ({
+          text: item.textContent?.trim() ?? "",
+          opacity: Number.parseFloat(
+            window.getComputedStyle(item).opacity || "0",
+          ),
+        }))
+        .sort((a, b) => b.opacity - a.opacity);
+
+      return ranked[0]?.text ?? "";
+    });
+
+    seen.push(active);
+    await expect(page.locator(".material-module")).toHaveCount(19);
+  }
+
+  expect(new Set(seen).size).toBeGreaterThanOrEqual(4);
+  await expectNoHorizontalOverflow(page);
+});
