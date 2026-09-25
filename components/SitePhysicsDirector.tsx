@@ -68,7 +68,7 @@ const transitions: Transition[] = [
     trigger: "#now",
     from: "intelligence",
     to: "build",
-    start: "top 92%",
+    start: "top bottom",
     end: "top 40%",
   },
   {
