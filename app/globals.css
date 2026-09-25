@@ -406,8 +406,21 @@ a {
   border-bottom: 1px solid var(--hairline);
 }
 
+.project-row[data-active-project="true"] {
+  opacity: 1;
+}
+
+.project-row[data-active-project="true"] h2 {
+  transform: translateX(0);
+}
+
+.project-row h2 {
+  transform: translateX(-0.6vw);
+  transition: transform 520ms cubic-bezier(.2,.7,.2,1);
+}
+
 .project-row:hover {
-  padding-left: 1.25vw;
+  opacity: 1;
 }
 
 .project-meta {
@@ -991,8 +1004,9 @@ a {
   .project-row {
     grid-template-columns: 1fr auto;
     gap: 18px;
-    min-height: 58svh;
-    padding: 48px 0 54px;
+    min-height: 74svh;
+    padding: 56px 0 64px;
+    opacity: 0.5;
   }
 
   .project-meta {
