@@ -198,16 +198,16 @@ test("dört proje aynı 19 parçaya dört farklı dil veriyor", async ({ page })
   const modules = page.locator(".material-module");
   await expect(modules).toHaveCount(19);
 
-  const selectors = [
-    "#project-kepenk",
-    "#project-yote",
-    "#project-kldrm",
-    "#project-h19",
-  ];
+  const projects = [
+    ["#project-kepenk", "kepenk"],
+    ["#project-yote", "yote"],
+    ["#project-kldrm", "kldrm"],
+    ["#project-h19", "h19"],
+  ] as const;
 
   const signatures: string[] = [];
 
-  for (const selector of selectors) {
+  for (const [selector, expectedState] of projects) {
     const targetY = await page.locator(selector).evaluate((element) =>
       element.getBoundingClientRect().top +
       window.scrollY -
@@ -225,6 +225,10 @@ test("dört proje aynı 19 parçaya dört farklı dil veriyor", async ({ page })
 
     signatures.push(signature);
     await expect(modules).toHaveCount(19);
+    await expect(page.locator(".site-material")).toHaveAttribute(
+      "data-current-material-state",
+      expectedState,
+    );
     await expectNoHorizontalOverflow(page);
   }
 
