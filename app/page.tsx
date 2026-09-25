@@ -9,24 +9,32 @@ const projects = [
     title: "Kepenk.ai",
     type: "ÜRÜN / SİSTEM",
     description: "Küçük işletmeler için daha basit bir çalışma sistemi.",
+    slug: "kepenk",
+    state: "kepenk",
   },
   {
     index: "02",
     title: "YOTE",
     type: "MEKÂN / EKOLOJİ",
     description: "Bir evden çok, yaşayan bir sistem deneyi.",
+    slug: "yote",
+    state: "yote",
   },
   {
     index: "03",
     title: "KLDRM",
     type: "KÜLTÜR / MEKÂN",
     description: "Müzik, mekân ve insanların kesiştiği bir üretim alanı.",
+    slug: "kldrm",
+    state: "kldrm",
   },
   {
     index: "04",
     title: "H19 / Jev",
     type: "LAB / ARAŞTIRMA",
     description: "Küçük modellerden ne kadar büyük sistemler çıkarabiliriz?",
+    slug: "h19",
+    state: "h19",
   },
 ];
 
@@ -103,7 +111,12 @@ export default function Home() {
 
         <div className="project-list">
           {projects.map((project) => (
-            <article className="project-row" key={project.title}>
+            <article
+              className="project-row"
+              id={`project-${project.slug}`}
+              data-project-state={project.state}
+              key={project.title}
+            >
               <div className="project-meta">
                 <span>{project.index}</span>
                 <span>{project.type}</span>
