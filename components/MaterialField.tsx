@@ -7,7 +7,12 @@ export type MaterialPresetName =
   | "build"
   | "system"
   | "deney"
-  | "kurarim";
+  | "kurarim"
+  | "body"
+  | "sound"
+  | "image"
+  | "space"
+  | "intelligence";
 
 export type MaterialViewport = "desktop" | "mobile";
 
@@ -190,6 +195,195 @@ function fitWord(
   );
 }
 
+
+function body(viewport: MaterialViewport): MaterialTransform[] {
+  const opacity = viewport === "mobile" ? 0.2 : 0.28;
+  const scale = viewport === "mobile" ? 0.82 : 1;
+  const x = CX;
+  const y = CY - 18;
+
+  const strokes: Stroke[] = [
+    // head / 6
+    [x - 16, y - 128, 30, 34],
+    [x + 16, y - 128, -30, 34],
+    [x + 31, y - 103, 90, 34],
+    [x + 16, y - 78, 30, 34],
+    [x - 16, y - 78, -30, 34],
+    [x - 31, y - 103, 90, 34],
+
+    // spine / shoulders / core
+    [x, y - 22, 90, 82],
+    [x, y + 48, 90, 58],
+    [x, y - 50, 0, 116],
+    [x, y + 8, 90, 26],
+
+    // arms / 4
+    [x - 76, y - 22, -28, 82],
+    [x - 116, y + 17, -55, 70],
+    [x + 76, y - 22, 28, 82],
+    [x + 116, y + 17, 55, 70],
+
+    // pelvis / legs / 5
+    [x, y + 82, 0, 86],
+    [x - 42, y + 126, -63, 96],
+    [x - 78, y + 190, -78, 92],
+    [x + 42, y + 126, 63, 96],
+    [x + 78, y + 190, 78, 92],
+  ];
+
+  return fitWord(
+    strokes.map(([sx, sy, r, l]) => [
+      CX + (sx - CX) * scale,
+      sy,
+      r,
+      l * scale,
+    ]),
+    "desktop",
+    opacity,
+  );
+}
+
+function sound(viewport: MaterialViewport): MaterialTransform[] {
+  const width = viewport === "mobile" ? 430 : 620;
+  const amplitude = viewport === "mobile" ? 80 : 104;
+  const opacity = viewport === "mobile" ? 0.2 : 0.28;
+
+  return Array.from({ length: COUNT }, (_, index) => {
+    const t = index / (COUNT - 1);
+    const phase = t * Math.PI * 4.25;
+    const x = CX - width / 2 + t * width;
+    const y = CY + Math.sin(phase) * amplitude;
+    const derivative = Math.cos(phase) * amplitude * (Math.PI * 4.25) / width;
+    const rotation = (Math.atan2(derivative, 1) * 180) / Math.PI;
+
+    return segment(
+      x,
+      y,
+      rotation,
+      viewport === "mobile" ? 34 : 46,
+      opacity,
+    );
+  });
+}
+
+function image(viewport: MaterialViewport): MaterialTransform[] {
+  const opacity = viewport === "mobile" ? 0.19 : 0.27;
+  const w = viewport === "mobile" ? 330 : 470;
+  const h = viewport === "mobile" ? 250 : 320;
+  const left = CX - w / 2;
+  const right = CX + w / 2;
+  const top = CY - h / 2;
+  const bottom = CY + h / 2;
+  const thirdW = w / 3;
+  const thirdH = h / 3;
+
+  const strokes: Stroke[] = [
+    // frame / 12
+    [left + thirdW / 2, top, 0, thirdW],
+    [left + thirdW * 1.5, top, 0, thirdW],
+    [left + thirdW * 2.5, top, 0, thirdW],
+    [left + thirdW / 2, bottom, 0, thirdW],
+    [left + thirdW * 1.5, bottom, 0, thirdW],
+    [left + thirdW * 2.5, bottom, 0, thirdW],
+    [left, top + thirdH / 2, 90, thirdH],
+    [left, top + thirdH * 1.5, 90, thirdH],
+    [left, top + thirdH * 2.5, 90, thirdH],
+    [right, top + thirdH / 2, 90, thirdH],
+    [right, top + thirdH * 1.5, 90, thirdH],
+    [right, top + thirdH * 2.5, 90, thirdH],
+
+    // aperture / 7
+    [CX, CY - 72, 90, 86],
+    [CX + 61, CY - 35, 30, 86],
+    [CX + 61, CY + 35, -30, 86],
+    [CX, CY + 72, 90, 86],
+    [CX - 61, CY + 35, 30, 86],
+    [CX - 61, CY - 35, -30, 86],
+    [CX, CY, 0, 92],
+  ];
+
+  return fitWord(strokes, "desktop", opacity);
+}
+
+function space(viewport: MaterialViewport): MaterialTransform[] {
+  const opacity = viewport === "mobile" ? 0.18 : 0.26;
+  const outerW = viewport === "mobile" ? 370 : 520;
+  const outerH = viewport === "mobile" ? 290 : 350;
+  const innerW = outerW * 0.44;
+  const innerH = outerH * 0.42;
+
+  const l = CX - outerW / 2;
+  const r = CX + outerW / 2;
+  const t = CY - outerH / 2;
+  const b = CY + outerH / 2;
+  const il = CX - innerW / 2;
+  const ir = CX + innerW / 2;
+  const it = CY - innerH / 2;
+  const ib = CY + innerH / 2;
+
+  const lineBetween = (
+    ax: number,
+    ay: number,
+    bx: number,
+    by: number,
+  ): Stroke => {
+    const dx = bx - ax;
+    const dy = by - ay;
+    return [
+      (ax + bx) / 2,
+      (ay + by) / 2,
+      (Math.atan2(dy, dx) * 180) / Math.PI,
+      Math.hypot(dx, dy),
+    ];
+  };
+
+  const strokes: Stroke[] = [
+    // outer / 4
+    [CX, t, 0, outerW],
+    [CX, b, 0, outerW],
+    [l, CY, 90, outerH],
+    [r, CY, 90, outerH],
+
+    // inner / 4
+    [CX, it, 0, innerW],
+    [CX, ib, 0, innerW],
+    [il, CY, 90, innerH],
+    [ir, CY, 90, innerH],
+
+    // connectors / 4
+    lineBetween(l, t, il, it),
+    lineBetween(r, t, ir, it),
+    lineBetween(l, b, il, ib),
+    lineBetween(r, b, ir, ib),
+
+    // perspective floor / 7
+    lineBetween(l + outerW * 0.14, b, il + innerW * 0.12, ib),
+    lineBetween(l + outerW * 0.28, b, il + innerW * 0.24, ib),
+    lineBetween(l + outerW * 0.42, b, il + innerW * 0.39, ib),
+    lineBetween(CX, b, CX, ib),
+    lineBetween(r - outerW * 0.42, b, ir - innerW * 0.39, ib),
+    lineBetween(r - outerW * 0.28, b, ir - innerW * 0.24, ib),
+    lineBetween(r - outerW * 0.14, b, ir - innerW * 0.12, ib),
+  ];
+
+  return fitWord(strokes, "desktop", opacity);
+}
+
+function intelligence(viewport: MaterialViewport): MaterialTransform[] {
+  const opacity = viewport === "mobile" ? 0.22 : 0.3;
+
+  return Array.from({ length: COUNT }, (_, index) => {
+    const step = index % 3 === 0 ? 5 : index % 3 === 1 ? 7 : 8;
+    const base = chord(index, step, viewport);
+
+    return {
+      ...base,
+      scaleX: base.scaleX * (index % 2 === 0 ? 0.72 : 0.92),
+      opacity,
+    };
+  });
+}
+
 function deney(viewport: MaterialViewport): MaterialTransform[] {
   const top = 292;
   const mid = 350;
@@ -321,6 +515,11 @@ export function getMaterialPreset(
   if (name === "system") return system(viewport);
   if (name === "deney") return deney(viewport);
   if (name === "kurarim") return kurarim(viewport);
+  if (name === "body") return body(viewport);
+  if (name === "sound") return sound(viewport);
+  if (name === "image") return image(viewport);
+  if (name === "space") return space(viewport);
+  if (name === "intelligence") return intelligence(viewport);
 
   return Array.from({ length: COUNT }, (_, index) => {
     if (name === "see") return see(index, viewport);
