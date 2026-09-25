@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { execFileSync } from 'node:child_process';
-import { readFile, writeFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
+import { readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -30,6 +31,7 @@ const [
   discoveryApi,
   packetApi,
   specApi,
+  candidateApi,
 ] = await Promise.all([
   importH19('src/repository/inventory.mjs'),
   importH19('src/adapters/git-history.mjs'),
@@ -41,6 +43,7 @@ const [
   importH19('src/discovery/coverage-discovery.mjs'),
   importH19('src/discovery/validation-packet.mjs'),
   importH19('src/specification/test-spec.mjs'),
+  importH19('src/materialization/test-candidate.mjs'),
 ]);
 
 function command(cmd, args, cwd = targetRoot) {
@@ -59,6 +62,79 @@ function changedPaths(revision) {
     '--no-renames',
     revision,
   ]).split(/\r?\n/).map((x) => x.trim()).filter(Boolean).sort();
+}
+
+function sha256Text(value) {
+  return createHash('sha256').update(String(value)).digest('hex');
+}
+
+function renderSitePhysicsCandidate(spec) {
+  const invariant = String(spec.expectedInvariant.value).replaceAll('\n', ' ');
+  const target = spec.target.path;
+  return [
+    'import { expect, test } from "@playwright/test";',
+    '',
+    'async function scrollNaturallyTo(page: import("@playwright/test").Page, targetY: number) {',
+    '  await page.evaluate(async (target) => {',
+    '    const start = window.scrollY;',
+    '    const steps = 16;',
+    '    for (let step = 1; step <= steps; step += 1) {',
+    '      const progress = step / steps;',
+    '      const eased = progress * progress * (3 - 2 * progress);',
+    '      window.scrollTo(0, start + (target - start) * eased);',
+    '      await new Promise((resolve) => window.setTimeout(resolve, 18));',
+    '    }',
+    '  }, targetY);',
+    '}',
+    '',
+    'async function expectNoHorizontalOverflow(page: import("@playwright/test").Page) {',
+    '  const metrics = await page.evaluate(() => ({',
+    '    viewport: window.innerWidth,',
+    '    body: document.body.scrollWidth,',
+    '    html: document.documentElement.scrollWidth,',
+    '  }));',
+    '  expect(metrics.body).toBeLessThanOrEqual(metrics.viewport + 1);',
+    '  expect(metrics.html).toBeLessThanOrEqual(metrics.viewport + 1);',
+    '}',
+    '',
+    'test("H19 generated SitePhysicsDirector runtime contract", async ({ page }) => {',
+    '  // target: ' + target,
+    '  // invariant: ' + invariant,
+    '  await page.goto("/");',
+    '  const material = page.locator(".site-material");',
+    '  const modules = page.locator(".material-module");',
+    '  await expect(modules).toHaveCount(19);',
+    '  await expect(material).toHaveAttribute("data-physics-ready", "true");',
+    '',
+    '  const projects = [',
+    '    ["#project-kepenk", "kepenk"],',
+    '    ["#project-yote", "yote"],',
+    '    ["#project-kldrm", "kldrm"],',
+    '    ["#project-h19", "h19"],',
+    '  ] as const;',
+    '  const signatures: string[] = [];',
+    '',
+    '  for (const [selector, expectedState] of projects) {',
+    '    const targetY = await page.locator(selector).evaluate((element) =>',
+    '      element.getBoundingClientRect().top + window.scrollY - window.innerHeight * 0.3,',
+    '    );',
+    '    await scrollNaturallyTo(page, targetY);',
+    '    await page.waitForTimeout(120);',
+    '    await expect(material).toHaveAttribute("data-current-material-state", expectedState);',
+    '    signatures.push(await modules.evaluateAll((items) =>',
+    '      items.map((item) => [',
+    '        item.getAttribute("transform") ?? "",',
+    '        item.getAttribute("opacity") ?? "",',
+    '        item.getAttribute("style") ?? "",',
+    '      ].join("::")).join("|"),',
+    '    ));',
+    '  }',
+    '',
+    '  expect(new Set(signatures).size).toBe(4);',
+    '  await expectNoHorizontalOverflow(page);',
+    '});',
+    '',
+  ].join('\n');
 }
 
 function summarizeError(error) {
@@ -398,6 +474,70 @@ const testSpecification = await stage('M6-test-specification', async () => {
   };
 });
 
+const testCandidate = await stage('M7-test-candidate', async () => {
+  if (!testSpecification) throw new Error('M7 requires ready M6 specification');
+  const spec = report.observations.sitePhysicsTestSpecification;
+
+  const renderer = {
+    rendererId: 'yzt-digital-playwright-site-physics',
+    version: '0.1',
+    framework: '@playwright/test',
+    language: 'typescript',
+    artifactSha256: sha256Text(renderSitePhysicsCandidate.toString()),
+    render(input) {
+      return {
+        path: 'tests/h19-generated-site-physics.spec.ts',
+        operation: 'create',
+        content: renderSitePhysicsCandidate(input),
+      };
+    },
+  };
+
+  const candidate = candidateApi.materializeTestCandidate({ spec, renderer });
+  candidateApi.validateTestCandidate(candidate);
+  report.observations.sitePhysicsTestCandidate = candidate;
+  return {
+    candidateSha256: candidate.candidateSha256,
+    contentSha256: candidate.contentSha256,
+    specSha256: candidate.specSha256,
+    path: candidate.target.path,
+    operation: candidate.target.operation,
+    renderer: candidate.renderer,
+  };
+});
+
+const candidateExecution = await stage('M7-candidate-execution', async () => {
+  if (!testCandidate) throw new Error('M7 candidate execution requires materialized candidate');
+  const candidate = report.observations.sitePhysicsTestCandidate;
+  const candidatePath = path.join(targetRoot, candidate.target.path);
+
+  try {
+    await readFile(candidatePath, 'utf8');
+    throw new Error('M7 candidate target already exists in frozen target');
+  } catch (error) {
+    if (error?.code !== 'ENOENT') throw error;
+  }
+
+  try {
+    await writeFile(candidatePath, candidate.content, 'utf8');
+    const stdout = command('npx', [
+      'playwright',
+      'test',
+      candidate.target.path,
+      '--project=mobile-small',
+      '--reporter=list',
+    ], targetRoot);
+    return {
+      candidateSha256: candidate.candidateSha256,
+      path: candidate.target.path,
+      project: 'mobile-small',
+      outputTail: stdout.split(/\r?\n/).slice(-24),
+    };
+  } finally {
+    await rm(candidatePath, { force: true });
+  }
+});
+
 await stage('M6-promotion-guard', async () => {
   if (!discovery) throw new Error('M6 guard requires M5 output');
   const first = report.observations.packet.hypotheses[0];
@@ -430,6 +570,8 @@ delete report._graph;
 const passed = Object.values(report.stages).filter((x) => x.status === 'pass').length;
 const failed = Object.values(report.stages).filter((x) => x.status === 'fail').length;
 const deepest = [
+  'M7-candidate-execution',
+  'M7-test-candidate',
   'M6-test-specification',
   'M6-promotion-guard',
   'M5-runtime-validation',
@@ -453,10 +595,14 @@ report.summary = {
     report.stages['M5-runtime-validation']?.status === 'pass' ? 1 : 0,
   m6ReadyForExecution:
     report.stages['M6-test-specification']?.value?.readyForExecution ?? null,
+  m7CandidateSha256:
+    report.stages['M7-test-candidate']?.value?.candidateSha256 ?? null,
+  m7CandidateExecuted:
+    report.stages['M7-candidate-execution']?.status === 'pass',
   safeToNarrow:
     report.stages['M4-change-impact']?.value?.safeToNarrow ?? null,
   verdict: failed === 0
-    ? 'portable-through-M6-with-source-bound-runtime-validation'
+    ? 'portable-through-M7-with-executed-generated-candidate'
     : 'partial-portability',
 };
 
