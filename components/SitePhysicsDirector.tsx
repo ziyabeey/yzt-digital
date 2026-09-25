@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import {
   getMaterialPreset,
   type MaterialPresetName,
@@ -151,18 +153,7 @@ const transitions: Transition[] = [
 
 export function SitePhysicsDirector() {
   useEffect(() => {
-    let cancelled = false;
-    let cleanup = () => {};
-
-    void (async () => {
-      const [{ gsap }, { ScrollTrigger }] = await Promise.all([
-        import("gsap"),
-        import("gsap/ScrollTrigger"),
-      ]);
-
-      if (cancelled) return;
-
-      gsap.registerPlugin(ScrollTrigger);
+    gsap.registerPlugin(ScrollTrigger);
       const modules = Array.from(
       document.querySelectorAll<SVGGElement>(".material-module"),
     );
@@ -369,15 +360,9 @@ export function SitePhysicsDirector() {
       const refresh = () => ScrollTrigger.refresh();
       window.addEventListener("orientationchange", refresh);
 
-      cleanup = () => {
-        window.removeEventListener("orientationchange", refresh);
-        mm.revert();
-      };
-    })();
-
     return () => {
-      cancelled = true;
-      cleanup();
+      window.removeEventListener("orientationchange", refresh);
+      mm.revert();
     };
   }, []);
 
