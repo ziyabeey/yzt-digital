@@ -202,9 +202,10 @@ export function SitePhysicsDirector() {
 
         const setActiveLabel = (activeIndex: number) => {
           labels.forEach((label, index) => {
+            const active = index === activeIndex;
             label.style.opacity = "1";
-            label.style.color =
-              index === activeIndex ? "var(--fg)" : "var(--muted)";
+            label.style.color = active ? "var(--fg)" : "var(--muted)";
+            label.dataset.activeMaterial = active ? "true" : "false";
           });
         };
 
@@ -349,7 +350,14 @@ export function SitePhysicsDirector() {
           });
         });
 
+        if (materialRoot) {
+          materialRoot.dataset.physicsReady = "true";
+        }
+
         return () => {
+          if (materialRoot) {
+            delete materialRoot.dataset.physicsReady;
+          }
           identityTrigger.kill();
           projectTextTriggers.forEach((trigger) => trigger.kill());
           projectStateLocks.forEach((trigger) => trigger.kill());
