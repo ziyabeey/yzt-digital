@@ -81,13 +81,20 @@ CI ve deploy ortamında environment variable kullanılır.
 
 ## CI durumu
 
-GitHub Actions workflow'u repoda hazırdır fakat mevcut hesapta job'lar step başlamadan düşebilmektedir. Runner gerçekten başlamadan gelen failure, uygulama build sonucu kabul edilmemelidir.
+Repo transferinden sonra GitHub Actions runner normal çalışmaktadır.
 
-Production gate:
-- dependency install gerçekten başlamalı,
-- typecheck gerçekten koşmalı,
-- Next build gerçekten koşmalı,
-- Playwright mobil smoke gerçekten koşmalı,
-- vinext compatibility gerçekten koşmalı.
+Kanıtlı preview gate, run #10:
+- dependency install ✅
+- typecheck ✅
+- Next production build ✅
+- Chromium install ✅
+- 360×800 + 390×844 Playwright smoke: 24/24 ✅
+- vinext compatibility ✅
+- vinext build ✅
+- Cloudflare preview deploy ✅
+- hydration warning: 0 ✅
 
-Bu beş kanıt olmadan production deploy "yeşil" sayılmaz.
+Preview:
+https://yzt-digital-preview.ziyabeey1.workers.dev
+
+Production custom domain bağlamadan önce bu gate referans alınır.
