@@ -220,3 +220,23 @@ test("notes ve archive rotaları mobilde taşmadan açılıyor", async ({ page }
   await expect(page.locator(".archive-row")).toHaveCount(11);
   await expectNoHorizontalOverflow(page);
 });
+
+
+test("aktif proje metni malzeme sahnesiyle senkron kalır", async ({ page }) => {
+  await page.goto("/");
+
+  for (const selector of [
+    "#project-kepenk",
+    "#project-yote",
+    "#project-kldrm",
+    "#project-h19",
+  ]) {
+    const row = page.locator(selector);
+    await row.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(140);
+
+    await expect(row).toHaveAttribute("data-active-project", "true");
+    await expect(page.locator(".material-module")).toHaveCount(19);
+    await expectNoHorizontalOverflow(page);
+  }
+});
