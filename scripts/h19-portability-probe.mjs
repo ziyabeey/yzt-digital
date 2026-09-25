@@ -32,6 +32,8 @@ const [
   packetApi,
   specApi,
   candidateApi,
+  relationalApi,
+  composerApi,
 ] = await Promise.all([
   importH19('src/repository/inventory.mjs'),
   importH19('src/adapters/git-history.mjs'),
@@ -44,6 +46,8 @@ const [
   importH19('src/discovery/validation-packet.mjs'),
   importH19('src/specification/test-spec.mjs'),
   importH19('src/materialization/test-candidate.mjs'),
+  importH19('src/relations/relational-evidence.mjs'),
+  importH19('src/relations/relational-case-composer.mjs'),
 ]);
 
 function command(cmd, args, cwd = targetRoot) {
@@ -412,6 +416,9 @@ const runtimeValidation = await stage('M5-runtime-validation', async () => {
       ),
       project: 'mobile-small',
       testNames,
+      resolution: 'runtime-witness-present',
+      runtimeCoverageObserved: true,
+      coverageGapEstablished: false,
       witnesses: [
         'SitePhysicsDirector writes data-physics-ready=true',
         'SitePhysicsDirector writes data-current-material-state during project transitions',
@@ -538,6 +545,153 @@ const candidateExecution = await stage('M7-candidate-execution', async () => {
   }
 });
 
+const relationalEvidence = await stage('M8-relational-evidence', async () => {
+  if (!candidateExecution) throw new Error('M8 requires executed M7 candidate');
+
+  const hypothesisId = runtimeValidation.hypothesisId;
+  const validation = report.observations.sitePhysicsValidation;
+  const impactReport = report.observations.impact.symbolImpact.report;
+  const candidate = report.observations.sitePhysicsTestCandidate;
+
+  const coverageFact = {
+    factId: 'coverage:site-physics-runtime-witness',
+    family: 'coverage',
+    state: 'present',
+    metricId: 'playwright.source-bound-runtime-witness-count',
+    value: validation.observed.testNames.length,
+    unit: 'tests',
+    denominator: validation.observed.testNames.length,
+    sampleSize: validation.observed.testNames.length,
+    baseline: null,
+    lineageIds: [
+      'playwright:' + validation.observed.testBlobSha + ':mobile-small',
+    ],
+    provenance: {
+      producer: 'h19-yzt-portability-probe',
+      producerVersion: '0.1',
+      inputDigest: sha256Text(JSON.stringify(validation)),
+      sourceRevision,
+      evidenceIds: [
+        'impact.coverage_gap.present',
+        'source-bound-playwright-runtime-witness-v1',
+      ],
+    },
+  };
+
+  const dependencyFact = {
+    factId: 'dependency:site-physics-reference-sites',
+    family: 'dependency',
+    state: 'present',
+    metricId: 'scip.impacted-reference-site-count',
+    value: impactReport.referenceSiteCount,
+    unit: 'reference-sites',
+    denominator: null,
+    sampleSize: null,
+    baseline: null,
+    lineageIds: [
+      'scip:' + sourceRevision + ':' + decoderIdentity,
+    ],
+    provenance: {
+      producer: 'h19-typescript-evidence-graph',
+      producerVersion: '0.1',
+      inputDigest: sha256Text(JSON.stringify(report.observations.graphSummary)),
+      sourceRevision,
+      evidenceIds: ['impact.references.present'],
+    },
+  };
+
+  const facts = [coverageFact, dependencyFact];
+  const relationalCase = relationalApi.buildRelationalEvidenceCase({
+    packet: report.observations.packet,
+    hypothesisId,
+    facts,
+  });
+  relationalApi.validateRelationalEvidenceCase(relationalCase, {
+    packet: report.observations.packet,
+  });
+
+  const independent = relationalCase.deterministicFeatures
+    .find((feature) => feature.kind === 'independent-family-count');
+  const overlap = relationalCase.deterministicFeatures
+    .find((feature) => feature.kind === 'lineage-overlap');
+  if (independent?.value !== 2 || overlap?.value !== false) {
+    throw new Error('M8 did not preserve two independent non-overlapping evidence families');
+  }
+
+  report.observations.sitePhysicsRelationalFacts = facts;
+  report.observations.sitePhysicsRelationalCase = relationalCase;
+  return {
+    caseSha256: relationalCase.caseSha256,
+    hypothesisId,
+    factIds: relationalCase.facts.map((fact) => fact.factId),
+    families: relationalCase.facts.map((fact) => fact.family),
+    independentFamilyCount: independent.value,
+    lineageOverlap: overlap.value,
+    candidateSha256: candidate.candidateSha256,
+    authority: relationalCase.authority,
+  };
+});
+
+const relationalBatch = await stage('M9-relational-case-composer', async () => {
+  if (!relationalEvidence) throw new Error('M9 requires M8 relational evidence');
+  const targetPath = 'components/SitePhysicsDirector.tsx';
+  const factPool = report.observations.sitePhysicsRelationalFacts.map((fact) =>
+    composerApi.freezeScopedRelationalFact({
+      fact,
+      scope: { kind: 'path', path: targetPath },
+    }));
+
+  const composed = composerApi.composeRelationalCaseBatch({
+    packet: report.observations.packet,
+    factPool,
+    relationships: [],
+  });
+  composerApi.validateRelationalCaseBatch(composed.batch, {
+    packet: report.observations.packet,
+    relationalCases: composed.relationalCases,
+    factPool,
+    relationships: [],
+  });
+
+  if (composed.batch.cases.length !== 1 || composed.relationalCases.length !== 1) {
+    throw new Error('M9 expected exactly one eligible relational case');
+  }
+  const selected = composed.batch.cases[0];
+  if (selected.hypothesisId !== runtimeValidation.hypothesisId) {
+    throw new Error('M9 selected the wrong hypothesis');
+  }
+  if (selected.caseSha256 !== report.observations.sitePhysicsRelationalCase.caseSha256) {
+    throw new Error('M9 case identity differs from direct M8 case');
+  }
+
+  const otherSkips = composed.batch.skipped
+    .filter((item) => item.hypothesisId !== runtimeValidation.hypothesisId);
+  if (otherSkips.length !== report.observations.packet.hypotheses.length - 1
+    || otherSkips.some((item) => item.reason !== 'missing-required-anchor')) {
+    throw new Error('M9 did not preserve honest skip reasons for unbound hypotheses');
+  }
+
+  report.observations.sitePhysicsRelationalBatch = composed.batch;
+  return {
+    batchSha256: composed.batch.batchSha256,
+    compositionInputSha256: composed.batch.compositionInputSha256,
+    caseCount: composed.batch.cases.length,
+    skippedCount: composed.batch.skipped.length,
+    selectedCaseSha256: selected.caseSha256,
+    selectedFactIds: selected.selectedFactIds,
+    independentFamilyCount: selected.independentFamilyCount,
+    skipReasons: Object.fromEntries(
+      [...new Set(composed.batch.skipped.map((item) => item.reason))]
+        .sort()
+        .map((reason) => [
+          reason,
+          composed.batch.skipped.filter((item) => item.reason === reason).length,
+        ]),
+    ),
+    authority: composed.relationalCases[0].authority,
+  };
+});
+
 await stage('M6-promotion-guard', async () => {
   if (!discovery) throw new Error('M6 guard requires M5 output');
   const first = report.observations.packet.hypotheses[0];
@@ -570,6 +724,8 @@ delete report._graph;
 const passed = Object.values(report.stages).filter((x) => x.status === 'pass').length;
 const failed = Object.values(report.stages).filter((x) => x.status === 'fail').length;
 const deepest = [
+  'M9-relational-case-composer',
+  'M8-relational-evidence',
   'M7-candidate-execution',
   'M7-test-candidate',
   'M6-test-specification',
@@ -599,10 +755,14 @@ report.summary = {
     report.stages['M7-test-candidate']?.value?.candidateSha256 ?? null,
   m7CandidateExecuted:
     report.stages['M7-candidate-execution']?.status === 'pass',
+  m8RelationalCaseSha256:
+    report.stages['M8-relational-evidence']?.value?.caseSha256 ?? null,
+  m9RelationalCaseCount:
+    report.stages['M9-relational-case-composer']?.value?.caseCount ?? null,
   safeToNarrow:
     report.stages['M4-change-impact']?.value?.safeToNarrow ?? null,
   verdict: failed === 0
-    ? 'portable-through-M7-with-executed-generated-candidate'
+    ? 'portable-through-M9-with-advisory-relational-case'
     : 'partial-portability',
 };
 
