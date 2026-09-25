@@ -34,6 +34,7 @@ const [
   candidateApi,
   relationalApi,
   composerApi,
+  judgmentApi,
 ] = await Promise.all([
   importH19('src/repository/inventory.mjs'),
   importH19('src/adapters/git-history.mjs'),
@@ -48,6 +49,7 @@ const [
   importH19('src/materialization/test-candidate.mjs'),
   importH19('src/relations/relational-evidence.mjs'),
   importH19('src/relations/relational-case-composer.mjs'),
+  importH19('src/relations/relational-judgment-batch.mjs'),
 ]);
 
 function command(cmd, args, cwd = targetRoot) {
@@ -692,6 +694,78 @@ const relationalBatch = await stage('M9-relational-case-composer', async () => {
   };
 });
 
+const judgmentPlanning = await stage('M10-relational-judgment-plan', async () => {
+  if (!relationalBatch) throw new Error('M10 requires M9 relational batch');
+  const batch = report.observations.sitePhysicsRelationalBatch;
+  const relationalCases = [report.observations.sitePhysicsRelationalCase];
+
+  const planA = judgmentApi.buildRelationalJudgmentRequestPlan({
+    batch,
+    relationalCases,
+  });
+  const planB = judgmentApi.buildRelationalJudgmentRequestPlan({
+    batch,
+    relationalCases,
+  });
+  judgmentApi.validateRelationalJudgmentRequestPlan(planA, {
+    batch,
+    relationalCases,
+  });
+  if (planA.requestPlanSha256 !== planB.requestPlanSha256) {
+    throw new Error('M10 request plan is not deterministic');
+  }
+
+  let providerFetches = 0;
+  const result = await judgmentApi.runRelationalJudgmentBatch({
+    batch,
+    relationalCases,
+    maxLiveQuestions: 0,
+    apiKey: '',
+    cache: null,
+    fetchImpl: async () => {
+      providerFetches += 1;
+      throw new Error('M10 zero-budget portability run must not reach provider');
+    },
+  });
+
+  judgmentApi.validateRelationalJudgmentRun(result.run, {
+    batch,
+    requestPlan: result.requestPlan,
+    relationalCases,
+    judgments: result.judgments,
+    cacheEntries: result.cacheEntries,
+  });
+
+  if (providerFetches !== 0 || result.run.providerRequestCount !== 0) {
+    throw new Error('M10 zero-budget run attempted provider work');
+  }
+  if (result.requestPlan.requestPlanSha256 !== planA.requestPlanSha256) {
+    throw new Error('M10 run request plan differs from preflight plan');
+  }
+  if (result.run.rows.length !== 1
+    || result.run.rows[0].kind !== 'skipped'
+    || result.run.rows[0].reason !== 'live-question-budget') {
+    throw new Error('M10 zero-budget run did not fail closed at live-question budget');
+  }
+
+  report.observations.sitePhysicsJudgmentRequestPlan = result.requestPlan;
+  report.observations.sitePhysicsJudgmentRun = result.run;
+  return {
+    requestPlanSha256: result.requestPlan.requestPlanSha256,
+    judgmentRunSha256: result.run.judgmentRunSha256,
+    provider: result.run.provider,
+    model: result.run.model,
+    questionId: result.run.questionId,
+    questionVersion: result.run.questionVersion,
+    maxLiveQuestions: result.run.maxLiveQuestions,
+    providerRequestCount: result.run.providerRequestCount,
+    skipped: result.run.counts.skipped,
+    skipReason: result.run.rows[0].reason,
+    liveJudgmentsCollected: result.judgments.length,
+    authority: result.run.authority,
+  };
+});
+
 await stage('M6-promotion-guard', async () => {
   if (!discovery) throw new Error('M6 guard requires M5 output');
   const first = report.observations.packet.hypotheses[0];
@@ -724,6 +798,7 @@ delete report._graph;
 const passed = Object.values(report.stages).filter((x) => x.status === 'pass').length;
 const failed = Object.values(report.stages).filter((x) => x.status === 'fail').length;
 const deepest = [
+  'M10-relational-judgment-plan',
   'M9-relational-case-composer',
   'M8-relational-evidence',
   'M7-candidate-execution',
@@ -759,10 +834,16 @@ report.summary = {
     report.stages['M8-relational-evidence']?.value?.caseSha256 ?? null,
   m9RelationalCaseCount:
     report.stages['M9-relational-case-composer']?.value?.caseCount ?? null,
+  m10RequestPlanSha256:
+    report.stages['M10-relational-judgment-plan']?.value?.requestPlanSha256 ?? null,
+  m10ProviderRequestCount:
+    report.stages['M10-relational-judgment-plan']?.value?.providerRequestCount ?? null,
+  m10LiveJudgmentsCollected:
+    report.stages['M10-relational-judgment-plan']?.value?.liveJudgmentsCollected ?? null,
   safeToNarrow:
     report.stages['M4-change-impact']?.value?.safeToNarrow ?? null,
   verdict: failed === 0
-    ? 'portable-through-M9-with-advisory-relational-case'
+    ? 'portable-through-M10-planning-with-live-provider-fail-closed'
     : 'partial-portability',
 };
 
