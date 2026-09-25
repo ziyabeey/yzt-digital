@@ -151,6 +151,10 @@ export default function Home() {
           <p>
             Tasarım, kültür, teknoloji, mekân ve henüz adını koymadığım şeyler.
           </p>
+          <div className="notes-actions">
+            <a href="/notes">NOTLARI AÇ ↗</a>
+            <a href="/archive">ARŞİVİ AÇ ↗</a>
+          </div>
         </div>
       </section>
 
