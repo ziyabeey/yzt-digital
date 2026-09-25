@@ -1,8 +1,6 @@
 "use client";
 
-import { useLayoutEffect } from "react";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { useEffect } from "react";
 import {
   getMaterialPreset,
   type MaterialPresetName,
@@ -59,22 +57,18 @@ function applyMix(
   progress: number,
   temporalAmount = 0,
 ) {
-  const state = from.map((item, index) =>
-    mix(
-      item,
+  modules.forEach((module, index) => {
+    const state = mix(
+      from[index],
       to[index],
       temporalProgress(progress, index, temporalAmount),
-    ),
-  );
+    );
 
-  gsap.set(modules, {
-    x: (index: number) => state[index].x,
-    y: (index: number) => state[index].y,
-    rotation: (index: number) => state[index].rotation,
-    scaleX: (index: number) => state[index].scaleX,
-    scaleY: (index: number) => state[index].scaleY,
-    opacity: (index: number) => state[index].opacity,
-    transformOrigin: "0px 0px",
+    module.setAttribute(
+      "transform",
+      `translate(${state.x} ${state.y}) rotate(${state.rotation}) scale(${state.scaleX} ${state.scaleY})`,
+    );
+    module.setAttribute("opacity", String(state.opacity));
   });
 }
 
@@ -156,14 +150,25 @@ const transitions: Transition[] = [
 ];
 
 export function SitePhysicsDirector() {
-  useLayoutEffect(() => {
-    gsap.registerPlugin(ScrollTrigger);
-    const modules = Array.from(
+  useEffect(() => {
+    let cancelled = false;
+    let cleanup = () => {};
+
+    void (async () => {
+      const [{ gsap }, { ScrollTrigger }] = await Promise.all([
+        import("gsap"),
+        import("gsap/ScrollTrigger"),
+      ]);
+
+      if (cancelled) return;
+
+      gsap.registerPlugin(ScrollTrigger);
+      const modules = Array.from(
       document.querySelectorAll<SVGGElement>(".material-module"),
     );
-    if (modules.length !== 19) return;
+      if (modules.length !== 19) return;
 
-    const mm = gsap.matchMedia();
+      const mm = gsap.matchMedia();
 
     mm.add(
       {
@@ -197,13 +202,9 @@ export function SitePhysicsDirector() {
 
         const setActiveLabel = (activeIndex: number) => {
           labels.forEach((label, index) => {
-            gsap.set(label, {
-              opacity: index === activeIndex ? 1 : 0.2,
-              color:
-                index === activeIndex
-                  ? "var(--fg)"
-                  : "var(--muted)",
-            });
+            label.style.opacity = "1";
+            label.style.color =
+              index === activeIndex ? "var(--fg)" : "var(--muted)";
           });
         };
 
@@ -357,12 +358,18 @@ export function SitePhysicsDirector() {
       },
     );
 
-    const refresh = () => ScrollTrigger.refresh();
-    window.addEventListener("orientationchange", refresh);
+      const refresh = () => ScrollTrigger.refresh();
+      window.addEventListener("orientationchange", refresh);
+
+      cleanup = () => {
+        window.removeEventListener("orientationchange", refresh);
+        mm.revert();
+      };
+    })();
 
     return () => {
-      window.removeEventListener("orientationchange", refresh);
-      mm.revert();
+      cancelled = true;
+      cleanup();
     };
   }, []);
 
