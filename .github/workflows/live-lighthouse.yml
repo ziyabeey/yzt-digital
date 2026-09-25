@@ -98,6 +98,18 @@ jobs:
             .map((audit) => audit.id);
 
           console.log("A11Y_FAILURES=" + a11yFailures.join(","));
+
+          const unused = a["unused-javascript"]?.details?.items ?? [];
+          console.log("UNUSED_JS");
+          for (const item of unused.slice(0, 10)) {
+            console.log(
+              [
+                item.url ?? "unknown",
+                "total_bytes=" + Math.round(item.totalBytes ?? 0),
+                "wasted_bytes=" + Math.round(item.wastedBytes ?? 0),
+              ].join(" | ")
+            );
+          }
           NODE
 
       - name: Upload report
