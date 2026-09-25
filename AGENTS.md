@@ -77,3 +77,14 @@ Yeni bir animasyon bu fiillerden en az birine bağlanamıyorsa eklenmemelidir.
 - Geometri için 19-gon ve deterministik modüler dönüşümler tercih edilir.
 - 19 bir iddia veya numeroloji açıklaması olarak değil, iç tasarım grameri olarak kullanılır.
 - Yazı / şekil / grid / diyagram mümkün olduğunca aynı materyal ailesinden türemelidir.
+
+
+## 19-Stroke Grammar
+
+`GLYPH_GRAMMAR.md` zorunlu referanstır.
+
+- Material word veya ana sembol üretirken segment sayısı 19 olarak korunur.
+- DENEY, KURARIM ve biyografik haller ayrı SVG asset değildir.
+- BEDEN → SES → GÖRÜNTÜ → MEKÂN → SİSTEM → ZEKÂ aynı `.material-module` düğümlerinin transformlarıdır.
+- Crossfade ile iki ayrı çizim taklit etme; aynı node'ları morph et.
+- Mobilde geometri sadeleşebilir fakat node sayısı, anlam ve korunum yasası değişmez.
