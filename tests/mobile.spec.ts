@@ -31,7 +31,7 @@ test("19 modül korunuyor ve mobilde taşma yapmıyor", async ({ page }) => {
     await expectNoHorizontalOverflow(page);
   }
 
-  for (const selector of ["#about", "#now", "#work", "#lab", "#notes"]) {
+  for (const selector of ["#about", "#now", "#work", "#lab", "#notes", "#final"]) {
     await page.locator(selector).scrollIntoViewIfNeeded();
     await page.waitForTimeout(100);
     await expect(page.locator(".material-module")).toHaveCount(19);
@@ -99,5 +99,28 @@ test("mobil menü dokunma ve erişilebilirlik açısından çalışıyor", async
   await page.getByRole("link", { name: "LAB" }).click();
   await expect(page.locator("#lab")).toBeInViewport();
   await expect(page.getByRole("button", { name: "Menüyü aç" })).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+});
+
+
+test("aynı 19 modül baştan finale kadar biçim değiştiriyor", async ({ page }) => {
+  await page.goto("/");
+
+  const modules = page.locator(".material-module");
+  await expect(modules).toHaveCount(19);
+
+  const initial = await modules.nth(0).getAttribute("style");
+
+  await page.locator("#lab").scrollIntoViewIfNeeded();
+  await page.waitForTimeout(180);
+  const lab = await modules.nth(0).getAttribute("style");
+
+  await page.locator("#final").scrollIntoViewIfNeeded();
+  await page.waitForTimeout(180);
+  const final = await modules.nth(0).getAttribute("style");
+
+  await expect(modules).toHaveCount(19);
+  expect(lab).not.toBe(initial);
+  expect(final).not.toBe(lab);
   await expectNoHorizontalOverflow(page);
 });
