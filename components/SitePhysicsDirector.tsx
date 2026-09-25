@@ -79,16 +79,23 @@ const transitions: Transition[] = [
   {
     trigger: "#lab",
     from: "break",
-    to: "wonder",
+    to: "deney",
     start: "top 92%",
     end: "top 40%",
   },
   {
     trigger: "#notes",
-    from: "wonder",
+    from: "deney",
     to: "see",
     start: "top 92%",
     end: "top 42%",
+  },
+  {
+    trigger: "#final",
+    from: "see",
+    to: "kurarim",
+    start: "top 92%",
+    end: "top 34%",
   },
 ];
 
