@@ -219,7 +219,11 @@ test("dört proje aynı 19 parçaya dört farklı dil veriyor", async ({ page })
 
     const signature = await modules.evaluateAll((items) =>
       items
-        .map((item) => item.getAttribute("style") ?? "")
+        .map((item) => [
+          item.getAttribute("transform") ?? "",
+          item.getAttribute("opacity") ?? "",
+          item.getAttribute("style") ?? "",
+        ].join("::"))
         .join("|"),
     );
 
