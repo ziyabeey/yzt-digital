@@ -304,7 +304,7 @@ const runtimeValidation = await stage('M5-runtime-validation', async () => {
     'aynı 19 modül baştan finale kadar biçim değiştiriyor',
     'dört proje aynı 19 parçaya dört farklı dil veriyor',
   ];
-  const grep = '^(' + testNames.join('|') + ')$';
+  const grep = testNames.join('|');
   const stdout = command('npx', [
     'playwright',
     'test',
@@ -462,3 +462,4 @@ report.summary = {
 
 await writeFile(outputPath, JSON.stringify(report, null, 2) + '\n', 'utf8');
 console.log(JSON.stringify(report.summary, null, 2));
+if (failed > 0) process.exitCode = 1;
