@@ -4,13 +4,8 @@
   "compatibility_date": "2026-09-25",
   "compatibility_flags": ["nodejs_compat"],
   "main": "vinext/server/app-router-entry",
+  "workers_dev": true,
   "preview_urls": true,
-  "routes": [
-    {
-      "pattern": "yzt.digital",
-      "custom_domain": true
-    }
-  ],
   "assets": {
     "not_found_handling": "none"
   }
