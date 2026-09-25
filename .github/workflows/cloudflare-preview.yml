@@ -29,6 +29,12 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Mobile smoke
+        run: npm run test:mobile
+
       - name: Vinext compatibility
         run: npm run cloudflare:check
 
