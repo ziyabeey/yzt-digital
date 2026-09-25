@@ -58,6 +58,14 @@ jobs:
           npm install --prefix h19-source/tools/h19-kit --ignore-scripts --no-audit --no-fund
           npm install --global @sourcegraph/scip-typescript@0.4.0
 
+      - name: Install Chromium for H19 runtime validation
+        run: |
+          set -euo pipefail
+          (
+            cd target
+            npx playwright install --with-deps chromium
+          )
+
       - name: Set up Go for pinned SCIP decoder
         uses: actions/setup-go@v5
         with:
