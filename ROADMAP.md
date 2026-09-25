@@ -46,20 +46,21 @@
 - [x] Dört proje için benzersiz transform signature Playwright kontrolü
 
 ## M04 — Notes + Public Archive
-- [ ] Medium yazıları
-- [ ] Behance işleri
-- [ ] Saatchi Art
+- [x] Medium yazıları
+- [x] Behance işleri: doğrulanmış çekirdek arşiv
+- [x] Saatchi Art
 - [ ] LinkedIn / eski kamusal izler
-- [ ] Kaynak ve tarih doğrulaması
-- [ ] /archive kronolojisi
+- [x] Yayınlanan archive kayıtlarında kaynak ve tarih doğrulaması
+- [x] /archive kronolojisi
 
 ## M05 — Yayın
 - [ ] dependency install + typecheck
 - [ ] production build
-- [ ] vinext compatibility check
-- [ ] Cloudflare Workers config
+- [ ] vinext compatibility check — CF-02 gate hazır
+- [ ] Cloudflare Workers config — vinext init çıktısından üretilecek
 - [ ] preview deploy
 - [ ] yzt.digital custom domain
 - [ ] www → apex yönlendirme
-- [ ] metadata / sitemap / robots / OG
+- [x] metadata / sitemap / robots / Person + WebSite structured data
+- [ ] OG görsel sistemi
 - [ ] Lighthouse + reduced-motion + mobile smoke
