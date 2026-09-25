@@ -5,8 +5,8 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import {
   getMaterialPreset,
-  MaterialField,
   type MaterialTransform,
+  type MaterialViewport,
 } from "./MaterialField";
 
 const SYSTEM = "sistemi".split("");
@@ -30,192 +30,236 @@ export function Manifesto() {
     if (!root.current) return;
 
     gsap.registerPlugin(ScrollTrigger);
+    const mm = gsap.matchMedia();
 
-    const ctx = gsap.context(() => {
-      const scenes = gsap.utils.toArray<HTMLElement>(".manifesto-scene");
-      const letters = gsap.utils.toArray<HTMLElement>(".system-letter");
-      const modules = gsap.utils.toArray<SVGGElement>(".material-module");
+    mm.add(
+      {
+        mobile: "(max-width: 860px)",
+        reduceMotion: "(prefers-reduced-motion: reduce)",
+      },
+      (context) => {
+        if (!root.current) return;
 
-      const see = getMaterialPreset("see");
-      const broken = getMaterialPreset("break");
-      const wonder = getMaterialPreset("wonder");
-      const built = getMaterialPreset("build");
+        const conditions = context.conditions as {
+          mobile: boolean;
+          reduceMotion: boolean;
+        };
 
-      gsap.set(scenes, { autoAlpha: 0 });
-      gsap.set(scenes[0], { autoAlpha: 1 });
-      gsap.set(modules, materialTween(see));
+        const viewport: MaterialViewport = conditions.mobile
+          ? "mobile"
+          : "desktop";
 
-      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-        return;
-      }
+        const scenes = gsap.utils.toArray<HTMLElement>(
+          ".manifesto-scene",
+          root.current,
+        );
+        const letters = gsap.utils.toArray<HTMLElement>(
+          ".system-letter",
+          root.current,
+        );
+        const modules = Array.from(
+          document.querySelectorAll<SVGGElement>(".material-module"),
+        );
 
-      const tl = gsap.timeline({
-        defaults: { ease: "none" },
-        scrollTrigger: {
-          trigger: root.current,
-          start: "top top",
-          end: "bottom bottom",
-          scrub: 0.65,
-          invalidateOnRefresh: true,
-        },
-      });
+        const see = getMaterialPreset("see", viewport);
+        const broken = getMaterialPreset("break", viewport);
+        const wonder = getMaterialPreset("wonder", viewport);
+        const built = getMaterialPreset("build", viewport);
 
-      tl.addLabel("see")
-        .fromTo(
-          ".scene-one .manifesto-word",
-          { yPercent: 34, autoAlpha: 0 },
-          {
-            yPercent: 0,
-            autoAlpha: 1,
-            stagger: 0.09,
-            duration: 0.7,
-            ease: "power3.out",
-          },
-        )
-        .addLabel("break")
-        .to(
-          modules,
-          {
-            ...materialTween(broken),
-            duration: 1.35,
-            ease: "power3.inOut",
-          },
-          "break",
-        )
-        .to(
-          letters,
-          {
-            x: (index) => (index - (letters.length - 1) / 2) * 24,
-            y: (index) => (index % 2 === 0 ? -1 : 1) * (10 + index * 2),
-            rotation: (index) => (index - 3) * 1.6,
-            duration: 1.2,
-            ease: "power2.inOut",
-          },
-          "break",
-        )
-        .to(
-          ".scene-one .word-first",
-          { xPercent: -38, yPercent: -18, duration: 1.1 },
-          "break",
-        )
-        .to(
-          ".scene-one .word-last",
-          { xPercent: 34, yPercent: 22, duration: 1.1 },
-          "break",
-        )
-        .to(".scene-one", { autoAlpha: 0, duration: 0.45 }, "+=0.1")
-        .to(".scene-two", { autoAlpha: 1, duration: 0.25 })
-        .fromTo(
-          ".scene-two .line-a",
-          { xPercent: -14, letterSpacing: "0.02em" },
-          {
-            xPercent: 0,
-            letterSpacing: "0.14em",
-            duration: 1,
-            ease: "power3.out",
-          },
-          "<",
-        )
-        .fromTo(
-          ".scene-two .line-b",
-          { xPercent: 18, autoAlpha: 0 },
-          {
-            xPercent: 0,
-            autoAlpha: 1,
-            duration: 0.85,
-            ease: "power3.out",
-          },
-          "<0.2",
-        )
-        .to(".scene-two", { autoAlpha: 0, duration: 0.45 }, "+=0.55")
-        .addLabel("wonder")
-        .to(
-          modules,
-          {
-            ...materialTween(wonder),
-            duration: 1.55,
-            ease: "power2.inOut",
-          },
-          "wonder",
-        )
-        .to(".scene-three", { autoAlpha: 1, duration: 0.25 }, "wonder+=0.16")
-        .fromTo(
-          ".scene-three .question-a",
-          { yPercent: 55, autoAlpha: 0 },
-          {
-            yPercent: 0,
-            autoAlpha: 1,
-            duration: 0.9,
-            ease: "power3.out",
-          },
-          "wonder+=0.16",
-        )
-        .fromTo(
-          ".scene-three .question-b",
-          { xPercent: 13, autoAlpha: 0 },
-          {
-            xPercent: 0,
-            autoAlpha: 1,
-            duration: 0.9,
-            ease: "power3.out",
-          },
-          "wonder+=0.32",
-        )
-        .to(
-          ".scene-three .question-b",
-          {
-            xPercent: -2.5,
-            duration: 0.7,
-            ease: "sine.inOut",
-          },
-          "+=0.2",
-        )
-        .to(".scene-three", { autoAlpha: 0, duration: 0.45 }, "+=0.4")
-        .addLabel("build")
-        .to(
-          modules,
-          {
-            ...materialTween(built),
-            duration: 1.65,
-            ease: "expo.inOut",
-          },
-          "build",
-        )
-        .to(".scene-four", { autoAlpha: 1, duration: 0.25 }, "build+=0.2")
-        .fromTo(
-          ".scene-four .build-line",
-          { yPercent: 42, autoAlpha: 0 },
-          {
-            yPercent: 0,
-            autoAlpha: 1,
-            stagger: 0.12,
-            duration: 0.8,
-            ease: "power3.out",
-          },
-          "build+=0.2",
-        )
-        .fromTo(
-          ".scene-four .lock-word",
-          { letterSpacing: "0.5em", autoAlpha: 0.2 },
-          {
-            letterSpacing: "0.02em",
-            autoAlpha: 1,
-            duration: 1.3,
-            ease: "expo.out",
-          },
-          "build+=0.82",
-        )
-        .to(".manifesto-counter", { autoAlpha: 1, duration: 0.25 }, "<");
-    }, root);
+        gsap.set(scenes, { autoAlpha: 0 });
+        gsap.set(scenes[0], { autoAlpha: 1 });
+        gsap.set(modules, materialTween(see));
 
-    return () => ctx.revert();
+        if (conditions.reduceMotion) return;
+
+        const letterSpread = conditions.mobile ? 14 : 24;
+        const scrub = conditions.mobile ? 0.4 : 0.65;
+
+        const tl = gsap.timeline({
+          defaults: { ease: "none" },
+          scrollTrigger: {
+            trigger: root.current,
+            start: "top top",
+            end: "bottom bottom",
+            scrub,
+            invalidateOnRefresh: true,
+          },
+        });
+
+        tl.addLabel("see")
+          .fromTo(
+            ".scene-one .manifesto-word",
+            { yPercent: 28, autoAlpha: 0 },
+            {
+              yPercent: 0,
+              autoAlpha: 1,
+              stagger: 0.08,
+              duration: 0.7,
+              ease: "power3.out",
+            },
+          )
+          .addLabel("break")
+          .to(
+            modules,
+            {
+              ...materialTween(broken),
+              duration: 1.35,
+              ease: "power3.inOut",
+            },
+            "break",
+          )
+          .to(
+            letters,
+            {
+              x: (index) =>
+                (index - (letters.length - 1) / 2) * letterSpread,
+              y: (index) =>
+                (index % 2 === 0 ? -1 : 1) *
+                (conditions.mobile ? 7 + index : 10 + index * 2),
+              rotation: (index) => (index - 3) * 1.6,
+              duration: 1.2,
+              ease: "power2.inOut",
+            },
+            "break",
+          )
+          .to(
+            ".scene-one .word-first",
+            {
+              xPercent: conditions.mobile ? -18 : -38,
+              yPercent: -18,
+              duration: 1.1,
+            },
+            "break",
+          )
+          .to(
+            ".scene-one .word-last",
+            {
+              xPercent: conditions.mobile ? 18 : 34,
+              yPercent: 22,
+              duration: 1.1,
+            },
+            "break",
+          )
+          .to(".scene-one", { autoAlpha: 0, duration: 0.45 }, "+=0.1")
+          .to(".scene-two", { autoAlpha: 1, duration: 0.25 })
+          .fromTo(
+            ".scene-two .line-a",
+            { xPercent: conditions.mobile ? -8 : -14, letterSpacing: "0.02em" },
+            {
+              xPercent: 0,
+              letterSpacing: conditions.mobile ? "0.07em" : "0.14em",
+              duration: 1,
+              ease: "power3.out",
+            },
+            "<",
+          )
+          .fromTo(
+            ".scene-two .line-b",
+            { xPercent: conditions.mobile ? 10 : 18, autoAlpha: 0 },
+            {
+              xPercent: 0,
+              autoAlpha: 1,
+              duration: 0.85,
+              ease: "power3.out",
+            },
+            "<0.2",
+          )
+          .to(".scene-two", { autoAlpha: 0, duration: 0.45 }, "+=0.55")
+          .addLabel("wonder")
+          .to(
+            modules,
+            {
+              ...materialTween(wonder),
+              duration: 1.55,
+              ease: "power2.inOut",
+            },
+            "wonder",
+          )
+          .to(".scene-three", { autoAlpha: 1, duration: 0.25 }, "wonder+=0.16")
+          .fromTo(
+            ".scene-three .question-a",
+            { yPercent: 45, autoAlpha: 0 },
+            {
+              yPercent: 0,
+              autoAlpha: 1,
+              duration: 0.9,
+              ease: "power3.out",
+            },
+            "wonder+=0.16",
+          )
+          .fromTo(
+            ".scene-three .question-b",
+            { xPercent: conditions.mobile ? 7 : 13, autoAlpha: 0 },
+            {
+              xPercent: 0,
+              autoAlpha: 1,
+              duration: 0.9,
+              ease: "power3.out",
+            },
+            "wonder+=0.32",
+          )
+          .to(
+            ".scene-three .question-b",
+            {
+              xPercent: conditions.mobile ? -1 : -2.5,
+              duration: 0.7,
+              ease: "sine.inOut",
+            },
+            "+=0.2",
+          )
+          .to(".scene-three", { autoAlpha: 0, duration: 0.45 }, "+=0.4")
+          .addLabel("build")
+          .to(
+            modules,
+            {
+              ...materialTween(built),
+              duration: 1.65,
+              ease: "expo.inOut",
+            },
+            "build",
+          )
+          .to(".scene-four", { autoAlpha: 1, duration: 0.25 }, "build+=0.2")
+          .fromTo(
+            ".scene-four .build-line",
+            { yPercent: 36, autoAlpha: 0 },
+            {
+              yPercent: 0,
+              autoAlpha: 1,
+              stagger: 0.12,
+              duration: 0.8,
+              ease: "power3.out",
+            },
+            "build+=0.2",
+          )
+          .fromTo(
+            ".scene-four .lock-word",
+            {
+              letterSpacing: conditions.mobile ? "0.24em" : "0.5em",
+              autoAlpha: 0.2,
+            },
+            {
+              letterSpacing: "0.02em",
+              autoAlpha: 1,
+              duration: 1.3,
+              ease: "expo.out",
+            },
+            "build+=0.82",
+          )
+          .to(".manifesto-counter", { autoAlpha: 1, duration: 0.25 }, "<");
+
+        return () => {
+          tl.scrollTrigger?.kill();
+          tl.kill();
+        };
+      },
+    );
+
+    return () => mm.revert();
   }, []);
 
   return (
     <section ref={root} className="manifesto" id="index">
       <div className="manifesto-sticky">
-        <MaterialField />
-
         <div className="manifesto-edge manifesto-edge-left">
           <span>YZT.DIGITAL</span>
           <span className="manifesto-counter">19 / 19</span>
