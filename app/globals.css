@@ -290,11 +290,21 @@ a {
 }
 
 .identity-section {
+  min-height: 420svh;
+  padding: 0;
+}
+
+.identity-sticky {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  padding: 120px var(--pad) 72px;
   display: grid;
   grid-template-columns: minmax(140px, 0.52fr) minmax(0, 1.48fr);
   grid-template-rows: auto 1fr auto;
   gap: 72px 32px;
   align-items: start;
+  overflow: hidden;
 }
 
 .identity-copy {
@@ -330,7 +340,14 @@ a {
   color: #676763;
 }
 
-.materials span:last-child {
+.material-label {
+  opacity: 0.2;
+  color: var(--muted);
+  will-change: opacity, color;
+}
+
+.material-label:first-child {
+  opacity: 1;
   color: var(--fg);
 }
 
@@ -715,7 +732,7 @@ a {
     pointer-events: none;
   }
 
-  .identity-section,
+  .identity-sticky,
   .now-section,
   .lab-section,
   .notes-section,
@@ -725,7 +742,16 @@ a {
   }
 
   .identity-section {
-    grid-template-rows: auto auto auto;
+    min-height: 470svh;
+  }
+
+  .identity-sticky {
+    padding:
+      max(104px, calc(env(safe-area-inset-top) + 86px))
+      var(--pad)
+      max(52px, env(safe-area-inset-bottom));
+    grid-template-rows: auto auto 1fr;
+    align-content: space-between;
   }
 
   .identity-copy h1 {
@@ -836,6 +862,21 @@ a {
 
   .manifesto {
     height: 100svh;
+  }
+
+  .identity-section {
+    min-height: 100svh;
+  }
+
+  .identity-sticky {
+    position: relative;
+    height: auto;
+    min-height: 100svh;
+  }
+
+  .material-label {
+    opacity: 1 !important;
+    color: var(--muted) !important;
   }
 
   .site-material .material-field {
