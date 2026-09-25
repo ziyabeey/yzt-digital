@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useLayoutEffect, useRef } from "react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import {
   getMaterialPreset,
   type MaterialTransform,
@@ -24,22 +26,11 @@ function materialTween(preset: MaterialTransform[]) {
 export function Manifesto() {
   const root = useRef<HTMLElement>(null);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!root.current) return;
 
-    let cancelled = false;
-    let cleanup = () => {};
-
-    void (async () => {
-      const [{ gsap }, { ScrollTrigger }] = await Promise.all([
-        import("gsap"),
-        import("gsap/ScrollTrigger"),
-      ]);
-
-      if (cancelled || !root.current) return;
-
-      gsap.registerPlugin(ScrollTrigger);
-      const mm = gsap.matchMedia();
+    gsap.registerPlugin(ScrollTrigger);
+    const mm = gsap.matchMedia();
 
       mm.add(
       {
@@ -263,13 +254,7 @@ export function Manifesto() {
       },
     );
 
-      cleanup = () => mm.revert();
-    })();
-
-    return () => {
-      cancelled = true;
-      cleanup();
-    };
+    return () => mm.revert();
   }, []);
 
   return (
