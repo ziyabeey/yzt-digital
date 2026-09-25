@@ -1,5 +1,22 @@
 import { expect, test } from "@playwright/test";
 
+async function scrollNaturallyTo(
+  page: import("@playwright/test").Page,
+  targetY: number,
+) {
+  await page.evaluate(async (target) => {
+    const start = window.scrollY;
+    const steps = 16;
+
+    for (let step = 1; step <= steps; step += 1) {
+      const progress = step / steps;
+      const eased = progress * progress * (3 - 2 * progress);
+      window.scrollTo(0, start + (target - start) * eased);
+      await new Promise((resolve) => window.setTimeout(resolve, 18));
+    }
+  }, targetY);
+}
+
 async function expectNoHorizontalOverflow(page: import("@playwright/test").Page) {
   const metrics = await page.evaluate(() => ({
     viewport: window.innerWidth,
@@ -191,15 +208,14 @@ test("dört proje aynı 19 parçaya dört farklı dil veriyor", async ({ page })
   const signatures: string[] = [];
 
   for (const selector of selectors) {
-    await page.locator(selector).evaluate((element) => {
-      const top =
-        element.getBoundingClientRect().top +
-        window.scrollY -
-        window.innerHeight * 0.3;
+    const targetY = await page.locator(selector).evaluate((element) =>
+      element.getBoundingClientRect().top +
+      window.scrollY -
+      window.innerHeight * 0.3,
+    );
 
-      window.scrollTo(0, top);
-    });
-    await page.waitForTimeout(220);
+    await scrollNaturallyTo(page, targetY);
+    await page.waitForTimeout(120);
 
     const signature = await modules.evaluateAll((items) =>
       items
