@@ -2,7 +2,7 @@ export type PublicTrace = {
   date: string;
   year: string;
   title: string;
-  source: "Medium" | "Behance" | "Saatchi Art";
+  source: "Medium" | "Behance" | "Saatchi Art" | "LinkedIn";
   kind: string;
   note: string;
   url: string;
@@ -26,6 +26,15 @@ export const publicTraces: PublicTrace[] = [
     kind: "YAZI",
     note: "Dalí, Cap de Creus, Sardana ve bir formun başka bir forma dönüşmesi üzerine.",
     url: "https://medium.com/@ziyabeey1/cap-de-creusta-sardana-ezgileri-abf1736205bf",
+  },
+  {
+    date: "2023-07-30",
+    year: "2023",
+    title: "Dieter Rams / Az Ama İyi",
+    source: "LinkedIn",
+    kind: "TASARIM NOTU",
+    note: "Sadelik, kullanılabilirlik ve zamansız tasarım üzerine kamusal bir tasarım notu. Bugünkü yzt.digital yönündeki 'daha az ama anlamlı' yaklaşımın erken izlerinden biri.",
+    url: "https://tr.linkedin.com/posts/ziyabey_tasar%C4%B1milham%C4%B1-dieterrams-end%C3%BCstriyeltasar%C4%B1m-activity-7091287187488481280-bP9W",
   },
   {
     date: "2023-07-28",
