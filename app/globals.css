@@ -102,9 +102,29 @@ a {
   overflow: hidden;
 }
 
+.material-field {
+  position: absolute;
+  inset: 9% 6%;
+  z-index: 1;
+  width: 88%;
+  height: 82%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.material-field-inner {
+  fill: var(--fg);
+}
+
+.material-module {
+  transform-origin: 0 0;
+  will-change: transform, opacity;
+}
+
 .manifesto-stage {
   position: absolute;
   inset: 0;
+  z-index: 2;
   display: grid;
   place-items: center;
   padding: calc(var(--pad) * 1.4);
@@ -484,6 +504,12 @@ a {
 
   .site-nav {
     display: none;
+  }
+
+  .material-field {
+    inset: 16% -8%;
+    width: 116%;
+    height: 68%;
   }
 
   .manifesto-line {
