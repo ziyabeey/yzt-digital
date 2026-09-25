@@ -12,7 +12,11 @@ export type MaterialPresetName =
   | "sound"
   | "image"
   | "space"
-  | "intelligence";
+  | "intelligence"
+  | "kepenk"
+  | "yote"
+  | "kldrm"
+  | "h19";
 
 export type MaterialViewport = "desktop" | "mobile";
 
@@ -384,6 +388,152 @@ function intelligence(viewport: MaterialViewport): MaterialTransform[] {
   });
 }
 
+
+function kepenk(viewport: MaterialViewport): MaterialTransform[] {
+  const opacity = viewport === "mobile" ? 0.2 : 0.28;
+  const width = viewport === "mobile" ? 350 : 540;
+  const height = viewport === "mobile" ? 270 : 330;
+  const left = CX - width / 2;
+  const right = CX + width / 2;
+  const top = CY - height / 2;
+  const bottom = CY + height / 2;
+  const col = width / 4;
+  const row = height / 4;
+  const slot = viewport === "mobile" ? 44 : 66;
+
+  const strokes: Stroke[] = [
+    // frame / 4
+    [CX, top, 0, width],
+    [CX, bottom, 0, width],
+    [left, CY, 90, height],
+    [right, CY, 90, height],
+
+    // grid / 6
+    [left + col, CY, 90, height],
+    [left + col * 2, CY, 90, height],
+    [left + col * 3, CY, 90, height],
+    [CX, top + row, 0, width],
+    [CX, top + row * 2, 0, width],
+    [CX, top + row * 3, 0, width],
+
+    // active slots / 9
+    [left + col * 0.5, top + row * 0.5, 0, slot],
+    [left + col * 1.5, top + row * 0.5, 0, slot * 0.74],
+    [left + col * 2.5, top + row * 0.5, 0, slot * 0.9],
+    [left + col * 0.5, top + row * 1.5, 0, slot * 0.62],
+    [left + col * 1.5, top + row * 1.5, 0, slot],
+    [left + col * 3.5, top + row * 1.5, 0, slot * 0.8],
+    [left + col * 0.5, top + row * 2.5, 0, slot * 0.82],
+    [left + col * 2.5, top + row * 2.5, 0, slot],
+    [left + col * 3.5, top + row * 2.5, 0, slot * 0.66],
+  ];
+
+  return strokes.map(([x, y, rotation, length]) =>
+    segment(x, y, rotation, length, opacity),
+  );
+}
+
+function yote(viewport: MaterialViewport): MaterialTransform[] {
+  const opacity = viewport === "mobile" ? 0.19 : 0.27;
+  const scale = viewport === "mobile" ? 0.72 : 1;
+  const sx = (x: number) => CX + (x - CX) * scale;
+  const sy = (y: number) => CY + (y - CY) * (viewport === "mobile" ? 0.84 : 1);
+  const sl = (length: number) => length * scale;
+
+  const strokes: Stroke[] = [
+    // parcel / 4
+    [sx(500), sy(470), 0, sl(590)],
+    [sx(500), sy(210), 0, sl(590)],
+    [sx(205), sy(340), 90, sl(260)],
+    [sx(795), sy(340), 90, sl(260)],
+
+    // cabin / 5
+    [sx(350), sy(402), 0, sl(150)],
+    [sx(275), sy(345), 90, sl(114)],
+    [sx(425), sy(345), 90, sl(114)],
+    [sx(310), sy(267), -32, sl(92)],
+    [sx(390), sy(267), 32, sl(92)],
+
+    // greenhouse / 5
+    [sx(600), sy(402), 0, sl(210)],
+    [sx(495), sy(345), 90, sl(114)],
+    [sx(705), sy(345), 90, sl(114)],
+    [sx(548), sy(278), -24, sl(118)],
+    [sx(652), sy(278), 24, sl(118)],
+
+    // underground core / 4
+    [sx(500), sy(448), 0, sl(220)],
+    [sx(500), sy(515), 0, sl(220)],
+    [sx(390), sy(482), 90, sl(67)],
+    [sx(610), sy(482), 90, sl(67)],
+
+    // one shared path / 1
+    [sx(470), sy(420), -8, sl(300)],
+  ];
+
+  return strokes.map(([x, y, rotation, length]) =>
+    segment(x, y, rotation, length, opacity),
+  );
+}
+
+function kldrm(viewport: MaterialViewport): MaterialTransform[] {
+  const width = viewport === "mobile" ? 430 : 650;
+  const minLength = viewport === "mobile" ? 26 : 34;
+  const maxLength = viewport === "mobile" ? 154 : 220;
+  const opacity = viewport === "mobile" ? 0.22 : 0.3;
+
+  return Array.from({ length: COUNT }, (_, index) => {
+    const t = index / (COUNT - 1);
+    const envelope = Math.sin(Math.PI * t);
+    const pulse =
+      0.48 +
+      0.52 *
+        Math.abs(
+          Math.sin(index * 1.71) * 0.68 + Math.sin(index * 0.57) * 0.32,
+        );
+    const length = minLength + (maxLength - minLength) * envelope * pulse;
+
+    return segment(
+      CX - width / 2 + t * width,
+      CY,
+      90,
+      length,
+      opacity,
+    );
+  });
+}
+
+function h19(viewport: MaterialViewport): MaterialTransform[] {
+  const opacity = viewport === "mobile" ? 0.22 : 0.3;
+  const hubs =
+    viewport === "mobile"
+      ? [
+          { x: CX, y: CY - 72 },
+          { x: CX - 70, y: CY + 56 },
+          { x: CX + 70, y: CY + 56 },
+        ]
+      : [
+          { x: CX, y: CY - 92 },
+          { x: CX - 94, y: CY + 72 },
+          { x: CX + 94, y: CY + 72 },
+        ];
+
+  return Array.from({ length: COUNT }, (_, index) => {
+    const a = pointOnEllipse(index, 286, 208, viewport);
+    const hub = hubs[(index * 7) % hubs.length];
+    const dx = hub.x - a.x;
+    const dy = hub.y - a.y;
+
+    return segment(
+      (a.x + hub.x) / 2,
+      (a.y + hub.y) / 2,
+      (Math.atan2(dy, dx) * 180) / Math.PI,
+      Math.hypot(dx, dy),
+      opacity,
+    );
+  });
+}
+
 function deney(viewport: MaterialViewport): MaterialTransform[] {
   const top = 292;
   const mid = 350;
@@ -520,6 +670,10 @@ export function getMaterialPreset(
   if (name === "image") return image(viewport);
   if (name === "space") return space(viewport);
   if (name === "intelligence") return intelligence(viewport);
+  if (name === "kepenk") return kepenk(viewport);
+  if (name === "yote") return yote(viewport);
+  if (name === "kldrm") return kldrm(viewport);
+  if (name === "h19") return h19(viewport);
 
   return Array.from({ length: COUNT }, (_, index) => {
     if (name === "see") return see(index, viewport);
