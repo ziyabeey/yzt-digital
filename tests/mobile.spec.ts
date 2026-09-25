@@ -191,8 +191,15 @@ test("dört proje aynı 19 parçaya dört farklı dil veriyor", async ({ page })
   const signatures: string[] = [];
 
   for (const selector of selectors) {
-    await page.locator(selector).scrollIntoViewIfNeeded();
-    await page.waitForTimeout(180);
+    await page.locator(selector).evaluate((element) => {
+      const top =
+        element.getBoundingClientRect().top +
+        window.scrollY -
+        window.innerHeight * 0.3;
+
+      window.scrollTo(0, top);
+    });
+    await page.waitForTimeout(220);
 
     const signature = await modules.evaluateAll((items) =>
       items
