@@ -29,6 +29,7 @@
 - [x] BEDEN → SES → GÖRÜNTÜ → MEKÂN → SİSTEM → ZEKÂ
 - [x] “Malzeme değişiyor. Merak aynı kalıyor.” pinned dönüşüm sekansı
 - [x] Aynı 19 modülü biyografik dönüşümde yeniden kullan
+- [x] Altı durumlu biyografik sekans Playwright kontrolü
 - [ ] Dalí esintisini zamanlama / gecikme / hizalama üzerinden ince ayarla
 - [x] Mobil koreografi için ayrı preset ve scrub değerleri
 - [x] Safe-area ve 44px touch hedefleri
