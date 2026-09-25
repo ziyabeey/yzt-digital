@@ -271,7 +271,8 @@ test("metadata sosyal görselleri erişilebilir PNG döndürür", async ({ page,
   expect(imageUrls.length).toBe(2);
 
   for (const url of imageUrls) {
-    const response = await request.get(url);
+    const parsed = new URL(url);
+    const response = await request.get(`${parsed.pathname}${parsed.search}`);
     expect(response.ok()).toBeTruthy();
     expect(response.headers()["content-type"]).toContain("image/png");
   }
