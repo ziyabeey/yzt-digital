@@ -23,7 +23,7 @@ test("19 modül korunuyor ve mobilde taşma yapmıyor", async ({ page }) => {
 
   for (const ratio of [0.12, 0.32, 0.54, 0.76, 0.96]) {
     await page.evaluate(
-      ({ y }) => window.scrollTo({ top: y, behavior: "instant" }),
+      ({ y }) => window.scrollTo(0, y),
       { y: manifestoHeight * ratio },
     );
     await page.waitForTimeout(80);
