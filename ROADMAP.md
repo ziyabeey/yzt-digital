@@ -59,9 +59,10 @@
 - [x] vinext compatibility check — green
 - [x] Cloudflare Workers config — vite.config.ts + wrangler.jsonc
 - [x] preview deploy — yzt-digital-preview.ziyabeey1.workers.dev
-- [ ] yzt.digital custom domain
-- [ ] www → apex yönlendirme
+- [x] yzt.digital custom domain — production live
+- [x] www → apex yönlendirme — permanent 308
 - [x] metadata / sitemap / robots / Person + WebSite structured data
 - [x] OG / Twitter görsel sistemi — 19-segment file-based metadata route
-- [ ] Lighthouse + reduced-motion
-- [x] mobile smoke — 360×800 + 390×844 — reduced-motion + 24/24 mobile smoke green; Lighthouse kaldı
+- [ ] Lighthouse baseline + optimization
+- [x] reduced-motion
+- [x] mobile smoke — local + live production, 360×800 + 390×844 — reduced-motion + 24/24 mobile smoke green; Lighthouse kaldı
