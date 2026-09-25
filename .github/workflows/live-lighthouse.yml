@@ -99,6 +99,19 @@ jobs:
 
           console.log("A11Y_FAILURES=" + a11yFailures.join(","));
 
+          console.log("COLOR_CONTRAST_DETAILS");
+          const contrastItems = a["color-contrast"]?.details?.items ?? [];
+          for (const item of contrastItems.slice(0, 20)) {
+            const node = item.node ?? {};
+            console.log(
+              [
+                "selector=" + (node.selector ?? ""),
+                "snippet=" + String(node.snippet ?? "").replace(/\s+/g, " ").slice(0, 180),
+                "explanation=" + String(node.explanation ?? "").replace(/\s+/g, " ").slice(0, 240),
+              ].join(" | ")
+            );
+          }
+
           const unused = a["unused-javascript"]?.details?.items ?? [];
           console.log("UNUSED_JS");
           for (const item of unused.slice(0, 10)) {
