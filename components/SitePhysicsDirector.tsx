@@ -244,6 +244,36 @@ export function SitePhysicsDirector() {
           },
         });
 
+        const projectRows = Array.from(
+          document.querySelectorAll<HTMLElement>(".project-row"),
+        );
+
+        const setActiveProject = (active: HTMLElement | null) => {
+          projectRows.forEach((row) => {
+            row.dataset.activeProject = row === active ? "true" : "false";
+          });
+        };
+
+        const projectTextTriggers = projectRows.map((row) =>
+          ScrollTrigger.create({
+            trigger: row,
+            start: "top 62%",
+            end: "bottom 38%",
+            onEnter: () => setActiveProject(row),
+            onEnterBack: () => setActiveProject(row),
+            onLeave: () => {
+              if (row.dataset.activeProject === "true") {
+                row.dataset.activeProject = "false";
+              }
+            },
+            onLeaveBack: () => {
+              if (row.dataset.activeProject === "true") {
+                row.dataset.activeProject = "false";
+              }
+            },
+          }),
+        );
+
         const triggers = transitions.map((transition) => {
           const from = getMaterialPreset(transition.from, viewport);
           const to = getMaterialPreset(transition.to, viewport);
@@ -280,6 +310,7 @@ export function SitePhysicsDirector() {
 
         return () => {
           identityTrigger.kill();
+          projectTextTriggers.forEach((trigger) => trigger.kill());
           triggers.forEach((trigger) => trigger.kill());
         };
       },
