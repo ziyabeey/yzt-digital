@@ -480,13 +480,15 @@ button:focus-visible {
 }
 
 .lab-word {
-  margin: 0;
-  font-size: clamp(7rem, 23vw, 27rem);
-  line-height: 0.7;
-  letter-spacing: -0.095em;
-  font-weight: 640;
-  color: rgba(242, 242, 237, 0.055);
-  -webkit-text-stroke: 1px rgba(242, 242, 237, 0.16);
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .lab-index {
