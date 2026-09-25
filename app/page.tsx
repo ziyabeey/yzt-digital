@@ -62,26 +62,28 @@ export default function Home() {
       <Manifesto />
 
       <section className="identity-section" id="about">
-        <div className="section-kicker">YUSUF ZİYA TERZİOĞLU</div>
-        <div className="identity-copy">
-          <h1>
-            Malzeme değişiyor.
-            <br />
-            Merak aynı kalıyor.
-          </h1>
-          <p>
-            İletişim tasarımcısı ve sistem kurucusu. Ürünler, sistemler,
-            mekânlar, kültür ve deneyler arasında çalışıyorum.
-          </p>
-        </div>
+        <div className="identity-sticky">
+          <div className="section-kicker">YUSUF ZİYA TERZİOĞLU</div>
+          <div className="identity-copy">
+            <h1>
+              Malzeme değişiyor.
+              <br />
+              Merak aynı kalıyor.
+            </h1>
+            <p>
+              İletişim tasarımcısı ve sistem kurucusu. Ürünler, sistemler,
+              mekânlar, kültür ve deneyler arasında çalışıyorum.
+            </p>
+          </div>
 
-        <div className="materials" aria-label="Çalışma alanları">
-          <span>BEDEN</span>
-          <span>SES</span>
-          <span>GÖRÜNTÜ</span>
-          <span>MEKÂN</span>
-          <span>SİSTEM</span>
-          <span>ZEKÂ</span>
+          <div className="materials" aria-label="Çalışma alanları">
+            <span className="material-label" data-material-state="body">BEDEN</span>
+            <span className="material-label" data-material-state="sound">SES</span>
+            <span className="material-label" data-material-state="image">GÖRÜNTÜ</span>
+            <span className="material-label" data-material-state="space">MEKÂN</span>
+            <span className="material-label" data-material-state="system">SİSTEM</span>
+            <span className="material-label" data-material-state="intelligence">ZEKÂ</span>
+          </div>
         </div>
       </section>
 
