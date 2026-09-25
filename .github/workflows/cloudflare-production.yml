@@ -81,3 +81,19 @@ jobs:
 
       - name: Deploy production
         run: npm run cloudflare:deploy
+
+      - name: Verify apex domain
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3 4 5 6; do
+            BODY=$(curl -fsSL --max-time 20 https://yzt.digital || true)
+            if echo "$BODY" | grep -q "YZT.DIGITAL"; then
+              echo "yzt.digital is live."
+              exit 0
+            fi
+            echo "Waiting for custom domain propagation ($attempt/6)..."
+            sleep 10
+          done
+          echo "Production domain did not become healthy."
+          exit 1
