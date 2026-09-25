@@ -61,5 +61,23 @@ jobs:
       - name: Vinext build
         run: npm run build:vinext
 
+      - name: Configure production custom domain
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require("fs");
+          const path = "wrangler.jsonc";
+          const config = JSON.parse(fs.readFileSync(path, "utf8"));
+          config.name = "yzt-digital";
+          config.workers_dev = false;
+          config.routes = [
+            {
+              pattern: "yzt.digital",
+              custom_domain: true
+            }
+          ];
+          fs.writeFileSync(path, JSON.stringify(config, null, 2) + "\n");
+          NODE
+
       - name: Deploy production
         run: npm run cloudflare:deploy
