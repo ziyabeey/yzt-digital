@@ -1,0 +1,39 @@
+name: live-mobile-smoke
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - verify/live
+    paths:
+      - ".live-smoke-trigger"
+      - ".github/workflows/live-mobile-smoke.yml"
+      - "tests/**"
+      - "playwright.config.ts"
+
+jobs:
+  live-mobile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      PLAYWRIGHT_BASE_URL: https://yzt.digital
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install
+        run: npm install --no-audit --no-fund
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Live mobile smoke
+        run: npm run test:mobile
