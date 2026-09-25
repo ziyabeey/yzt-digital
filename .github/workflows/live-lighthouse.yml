@@ -47,6 +47,57 @@ jobs:
           console.log("tbt=" + a["total-blocking-time"].displayValue);
           console.log("cls=" + a["cumulative-layout-shift"].displayValue);
           console.log("speed_index=" + a["speed-index"].displayValue);
+
+          const opportunities = Object.values(a)
+            .filter((audit) =>
+              audit &&
+              typeof audit === "object" &&
+              audit.score !== null &&
+              audit.score < 0.9 &&
+              (audit.details?.overallSavingsMs > 0 ||
+                audit.numericValue > 0)
+            )
+            .map((audit) => ({
+              id: audit.id,
+              title: audit.title,
+              score: audit.score,
+              displayValue: audit.displayValue ?? "",
+              savingsMs: audit.details?.overallSavingsMs ?? 0,
+              numericValue: audit.numericValue ?? 0,
+            }))
+            .sort((x, y) =>
+              (y.savingsMs - x.savingsMs) ||
+              (y.numericValue - x.numericValue)
+            )
+            .slice(0, 12);
+
+          console.log("TOP_AUDITS");
+          for (const audit of opportunities) {
+            console.log(
+              [
+                audit.id,
+                "score=" + audit.score,
+                "savings_ms=" + Math.round(audit.savingsMs),
+                audit.displayValue,
+              ].join(" | ")
+            );
+          }
+
+          const a11yFailures = Object.values(a)
+            .filter((audit) =>
+              audit &&
+              typeof audit === "object" &&
+              audit.score !== null &&
+              audit.score < 1 &&
+              audit.scoreDisplayMode === "binary"
+            )
+            .filter((audit) =>
+              Object.values(c.accessibility.auditRefs)
+                .some((ref) => ref.id === audit.id)
+            )
+            .map((audit) => audit.id);
+
+          console.log("A11Y_FAILURES=" + a11yFailures.join(","));
           NODE
 
       - name: Upload report
