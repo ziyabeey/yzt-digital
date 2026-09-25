@@ -80,3 +80,24 @@ test("reduced motion içerik ve navigasyonu bozmuyor", async ({ page }) => {
   await expect(page.locator("#now")).toContainText("Kepenk.ai");
   await expectNoHorizontalOverflow(page);
 });
+
+
+test("mobil menü dokunma ve erişilebilirlik açısından çalışıyor", async ({ page }) => {
+  await page.goto("/");
+
+  const menu = page.getByRole("button", { name: "Menüyü aç" });
+  await expect(menu).toBeVisible();
+
+  const box = await menu.boundingBox();
+  expect(box?.height ?? 0).toBeGreaterThanOrEqual(44);
+  expect(box?.width ?? 0).toBeGreaterThanOrEqual(44);
+
+  await menu.click();
+  await expect(page.getByRole("button", { name: "Menüyü kapat" })).toBeVisible();
+  await expect(page.getByRole("navigation", { name: "Mobil navigasyon" })).toBeVisible();
+
+  await page.getByRole("link", { name: "LAB" }).click();
+  await expect(page.locator("#lab")).toBeInViewport();
+  await expect(page.getByRole("button", { name: "Menüyü aç" })).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+});
