@@ -30,7 +30,7 @@
 - [x] “Malzeme değişiyor. Merak aynı kalıyor.” pinned dönüşüm sekansı
 - [x] Aynı 19 modülü biyografik dönüşümde yeniden kullan
 - [x] Altı durumlu biyografik sekans Playwright kontrolü
-- [ ] Dalí esintisini zamanlama / gecikme / hizalama üzerinden ince ayarla
+- [x] Dalí esintisi: 19-tabanlı deterministik zaman kayması / gecikme
 - [x] Mobil koreografi için ayrı preset ve scrub değerleri
 - [x] Safe-area ve 44px touch hedefleri
 - [x] Mobil navigasyon
@@ -57,8 +57,8 @@
 - [ ] dependency install + typecheck
 - [ ] production build
 - [ ] vinext compatibility check — CF-02 gate hazır
-- [ ] Cloudflare Workers config — vinext init çıktısından üretilecek
-- [ ] preview deploy
+- [x] Cloudflare Workers config — vite.config.ts + wrangler.jsonc
+- [ ] preview deploy — manuel Cloudflare preview workflow hazır
 - [ ] yzt.digital custom domain
 - [ ] www → apex yönlendirme
 - [x] metadata / sitemap / robots / Person + WebSite structured data
