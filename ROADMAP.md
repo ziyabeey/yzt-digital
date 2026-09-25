@@ -12,15 +12,17 @@
 - [x] 19-gon + 7i mod 19 tabanlı dönüşüm
 - [x] Hero timeline ile ortak materyali senkronla
 - [ ] Gerçek tarayıcıda ritim ve breakpoint ayarı
-- [ ] 19 modülün opaklık / ölçek dengesini ince ayarla
+- [x] Desktop/mobile için ayrı 19-modül presetleri
+- [ ] 19 modülün opaklık / ölçek dengesini gerçek cihazda ince ayarla
 - [ ] Fade bağımlılığını azalt; metin geçişlerini daha fiziksel yap
 
 ## M01.5 — Typography Morph
 - [ ] 19 segmentle çözülebilecek glyph gramerini tasarla
-- [ ] SİSTEM glyph deneyi
+- [x] SİSTEM glyph deneyi
 - [ ] DENEY glyph deneyi
 - [ ] KURARIM glyph deneyi
-- [ ] DOM metin ↔ SVG materyal senkron geçişi
+- [x] Hero → SİSTEM için DOM/SVG senkron geçişi
+- [ ] DENEY / KURARIM için DOM ↔ SVG senkron geçişi
 - [ ] 10=10 korunum testini her sahnede doğrula
 
 ## M02 — Biyografik dönüşüm
@@ -28,7 +30,11 @@
 - [ ] “Malzeme değişiyor. Merak aynı kalıyor.” kilit anı
 - [ ] Aynı 19 modülü biyografik dönüşümde yeniden kullan
 - [ ] Dalí esintisini zamanlama ve hizalama üzerinden ekle
-- [ ] Mobil koreografiyi ayrı ayarla
+- [x] Mobil koreografi için ayrı preset ve scrub değerleri
+- [x] Safe-area ve 44px touch hedefleri
+- [x] Mobil navigasyon
+- [x] 360×800 ve 390×844 Playwright smoke testleri
+- [ ] Gerçek iOS Safari / Android Chrome preview doğrulaması
 
 ## M03 — Work / aynı madde, dört lehçe
 - [ ] Kepenk.ai → grid / slot / akış
