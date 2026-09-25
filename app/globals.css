@@ -580,6 +580,210 @@ a {
   border: 0;
 }
 
+
+.notes-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 22px;
+  margin-top: 38px;
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  color: #9a9a95;
+}
+
+.notes-actions a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  transition:
+    color 180ms ease,
+    transform 180ms ease;
+}
+
+.notes-actions a:hover,
+.notes-actions a:focus-visible {
+  color: var(--fg);
+  transform: translateX(4px);
+}
+
+.archive-page,
+.notes-page {
+  min-height: 100svh;
+  background: transparent;
+}
+
+.subpage-header {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: max(22px, env(safe-area-inset-top));
+  padding-right: max(var(--pad), env(safe-area-inset-right));
+  padding-bottom: 22px;
+  padding-left: max(var(--pad), env(safe-area-inset-left));
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  mix-blend-mode: difference;
+  color: #fff;
+}
+
+.subpage-back {
+  min-height: 44px;
+  display: inline-grid;
+  place-items: center;
+  color: #aaa;
+}
+
+.archive-hero {
+  min-height: 92svh;
+  padding:
+    max(130px, calc(env(safe-area-inset-top) + 100px))
+    var(--pad)
+    80px;
+  display: grid;
+  grid-template-columns: minmax(140px, 0.52fr) minmax(0, 1.48fr);
+  grid-template-rows: auto 1fr auto;
+  gap: 64px 32px;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.archive-hero h1 {
+  grid-column: 2;
+  align-self: center;
+  margin: 0;
+  max-width: 1100px;
+  font-family: "Iowan Old Style", "Baskerville", "Times New Roman", serif;
+  font-size: clamp(4rem, 9.2vw, 10.5rem);
+  font-weight: 400;
+  line-height: 0.85;
+  letter-spacing: -0.06em;
+}
+
+.archive-hero > p:last-child {
+  grid-column: 2;
+  width: min(620px, 100%);
+  margin: 0;
+  font-size: clamp(1.05rem, 1.7vw, 1.55rem);
+  line-height: 1.45;
+  color: #9a9a95;
+}
+
+.archive-list,
+.note-list {
+  padding: 0 var(--pad);
+}
+
+.archive-row {
+  display: grid;
+  grid-template-columns:
+    minmax(36px, 0.16fr)
+    minmax(100px, 0.42fr)
+    minmax(260px, 1.5fr)
+    minmax(150px, 0.58fr);
+  gap: 26px;
+  align-items: start;
+  min-height: 32svh;
+  padding: 36px 0 44px;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.archive-index,
+.archive-date,
+.archive-source,
+.note-date,
+.note-source {
+  font-size: 9px;
+  line-height: 1.25;
+  letter-spacing: 0.14em;
+  color: #686864;
+}
+
+.archive-main h2,
+.note-row h2 {
+  margin: 0;
+  font-size: clamp(2.35rem, 4.6vw, 5.8rem);
+  line-height: 0.92;
+  letter-spacing: -0.055em;
+  font-weight: 530;
+}
+
+.archive-main p,
+.note-row p {
+  width: min(600px, 100%);
+  margin: 24px 0 0;
+  font-family: "Iowan Old Style", "Baskerville", "Times New Roman", serif;
+  font-size: clamp(1rem, 1.45vw, 1.45rem);
+  line-height: 1.35;
+  color: #888883;
+}
+
+.archive-source {
+  justify-self: end;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+  text-align: right;
+}
+
+.archive-row {
+  transition:
+    opacity 180ms ease,
+    padding-left 260ms cubic-bezier(.2,.7,.2,1);
+}
+
+.archive-row:hover,
+.archive-row:focus-visible {
+  padding-left: 10px;
+}
+
+.archive-list:has(.archive-row:hover) .archive-row:not(:hover) {
+  opacity: 0.34;
+}
+
+.notes-hero {
+  min-height: 82svh;
+}
+
+.note-row {
+  display: grid;
+  grid-template-columns: minmax(36px, 0.16fr) minmax(0, 1.6fr) minmax(120px, 0.46fr);
+  gap: 28px;
+  min-height: 40svh;
+  padding: 52px 0 60px;
+  border-bottom: 1px solid var(--hairline);
+  align-items: start;
+}
+
+.note-row h2 {
+  max-width: 920px;
+  margin-top: 18px;
+  font-family: "Iowan Old Style", "Baskerville", "Times New Roman", serif;
+  font-weight: 400;
+}
+
+.note-source {
+  justify-self: end;
+  text-align: right;
+}
+
+.subpage-footer {
+  min-height: 26svh;
+  padding:
+    44px max(var(--pad), env(safe-area-inset-right))
+    max(38px, env(safe-area-inset-bottom))
+    max(var(--pad), env(safe-area-inset-left));
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 24px;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  color: #646460;
+}
+
 @media (max-width: 860px) {
   :root {
     --pad: clamp(18px, 5.4vw, 28px);
@@ -837,6 +1041,78 @@ a {
 
   .notes-intro h2 {
     font-size: clamp(3.2rem, 14.5vw, 6.8rem);
+  }
+
+  .archive-hero {
+    min-height: 86svh;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr auto;
+    gap: 48px;
+    padding-top: max(112px, calc(env(safe-area-inset-top) + 88px));
+  }
+
+  .archive-hero h1,
+  .archive-hero > p:last-child {
+    grid-column: 1;
+  }
+
+  .archive-hero h1 {
+    font-size: clamp(3.5rem, 15.5vw, 7rem);
+    overflow-wrap: anywhere;
+  }
+
+  .archive-row {
+    grid-template-columns: 42px 1fr;
+    gap: 18px;
+    min-height: auto;
+    padding: 34px 0 42px;
+  }
+
+  .archive-date {
+    justify-self: end;
+  }
+
+  .archive-main {
+    grid-column: 1 / -1;
+    padding-left: 60px;
+  }
+
+  .archive-main h2,
+  .note-row h2 {
+    font-size: clamp(2.5rem, 12vw, 5.2rem);
+    overflow-wrap: anywhere;
+  }
+
+  .archive-source {
+    grid-column: 1 / -1;
+    justify-self: start;
+    align-items: flex-start;
+    padding-left: 60px;
+    text-align: left;
+  }
+
+  .note-row {
+    grid-template-columns: 42px 1fr;
+    gap: 18px;
+    min-height: auto;
+    padding: 42px 0 50px;
+  }
+
+  .note-source {
+    grid-column: 2;
+    justify-self: start;
+    text-align: left;
+  }
+
+  .notes-actions {
+    gap: 12px 24px;
+  }
+
+  .subpage-footer {
+    min-height: 22svh;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-end;
   }
 
   .site-footer {
