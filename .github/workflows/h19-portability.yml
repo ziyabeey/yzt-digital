@@ -51,6 +51,9 @@ jobs:
         with:
           node-version: 22
 
+      - name: Syntax-check H19 probe harness
+        run: node --check harness/scripts/h19-portability-probe.mjs
+
       - name: Install target and H19 dependencies
         run: |
           set -euo pipefail
@@ -99,7 +102,7 @@ jobs:
         if: always()
         run: |
           if [ -s "${RUNNER_TEMP}/h19-portability-report.json" ]; then
-            jq '.summary, .stages["M3.5-scip-evidence-graph"], .stages["M4-change-impact"], .stages["M5-coverage-discovery"], .stages["M6-promotion-guard"]'               "${RUNNER_TEMP}/h19-portability-report.json" >> "${GITHUB_STEP_SUMMARY}"
+            jq '.summary, .stages["M3.5-scip-evidence-graph"], .stages["M4-change-impact"], .stages["M5-coverage-discovery"], .stages["M5-runtime-validation"], .stages["M6-test-specification"], .stages["M6-promotion-guard"]'               "${RUNNER_TEMP}/h19-portability-report.json" >> "${GITHUB_STEP_SUMMARY}"
           fi
 
       - name: Upload H19 portability report
