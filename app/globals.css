@@ -272,7 +272,8 @@ a {
 .now-section,
 .work-section,
 .lab-section,
-.notes-section {
+.notes-section,
+.final-section {
   position: relative;
   z-index: 2;
   min-height: 100svh;
@@ -446,6 +447,8 @@ a {
   line-height: 0.7;
   letter-spacing: -0.095em;
   font-weight: 640;
+  color: rgba(242, 242, 237, 0.055);
+  -webkit-text-stroke: 1px rgba(242, 242, 237, 0.16);
 }
 
 .lab-index {
@@ -487,6 +490,42 @@ a {
   font-size: 1.05rem;
   line-height: 1.5;
   color: var(--muted);
+}
+
+.final-section {
+  min-height: 125svh;
+  display: grid;
+  grid-template-columns: minmax(140px, 0.52fr) minmax(0, 1.48fr);
+  grid-template-rows: auto 1fr;
+  gap: 32px;
+}
+
+.final-copy {
+  grid-column: 2;
+  align-self: end;
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 36px;
+  padding-bottom: min(12svh, 120px);
+}
+
+.final-equation {
+  margin: 0;
+  font-size: 10px;
+  line-height: 1;
+  letter-spacing: 0.18em;
+  color: var(--muted);
+}
+
+.final-sentence {
+  margin: 0;
+  max-width: 680px;
+  text-align: right;
+  font-family: "Iowan Old Style", "Baskerville", "Times New Roman", serif;
+  font-size: clamp(2rem, 4vw, 4.6rem);
+  line-height: 0.98;
+  letter-spacing: -0.045em;
 }
 
 .site-footer {
@@ -679,7 +718,8 @@ a {
   .identity-section,
   .now-section,
   .lab-section,
-  .notes-section {
+  .notes-section,
+  .final-section {
     grid-template-columns: 1fr;
     gap: 70px;
   }
@@ -748,6 +788,24 @@ a {
     max-width: 100%;
     font-size: clamp(5.7rem, 30vw, 11rem);
     overflow-wrap: anywhere;
+  }
+
+  .final-section {
+    min-height: 112svh;
+  }
+
+  .final-copy {
+    grid-column: 1;
+    align-self: end;
+    flex-direction: column;
+    align-items: flex-start;
+    padding-bottom: max(12svh, env(safe-area-inset-bottom));
+  }
+
+  .final-sentence {
+    max-width: 92%;
+    text-align: left;
+    font-size: clamp(2.2rem, 11vw, 4.8rem);
   }
 
   .notes-intro h2 {
