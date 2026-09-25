@@ -240,7 +240,7 @@ button:focus-visible {
   gap: 16px;
   font-size: 9px;
   letter-spacing: 0.16em;
-  color: #5c5c59;
+  color: var(--muted);
 }
 
 .manifesto-edge-left {
@@ -267,7 +267,7 @@ button:focus-visible {
   font-size: 9px;
   text-transform: uppercase;
   letter-spacing: 0.18em;
-  color: #5a5a57;
+  color: var(--muted);
 }
 
 .scroll-cue-line {
@@ -349,9 +349,9 @@ button:focus-visible {
 }
 
 .material-label {
-  opacity: 0.2;
+  opacity: 1;
   color: var(--muted);
-  will-change: opacity, color;
+  will-change: color;
 }
 
 .material-label:first-child {
@@ -439,7 +439,7 @@ button:focus-visible {
   gap: 9px;
   font-size: 9px;
   letter-spacing: 0.15em;
-  color: #666662;
+  color: var(--muted);
 }
 
 .project-row h2 {
@@ -578,7 +578,7 @@ button:focus-visible {
   gap: 20px;
   font-size: 9px;
   letter-spacing: 0.14em;
-  color: #5d5d59;
+  color: var(--muted);
 }
 
 .footer-links {
@@ -1085,7 +1085,6 @@ button:focus-visible {
     gap: 18px;
     min-height: 74svh;
     padding: 56px 0 64px;
-    opacity: 0.5;
   }
 
   .project-meta {
