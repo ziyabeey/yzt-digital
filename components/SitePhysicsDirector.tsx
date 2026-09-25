@@ -54,17 +54,19 @@ type Transition = {
   end?: string;
 };
 
+const identityStates: MaterialPresetName[] = [
+  "body",
+  "sound",
+  "image",
+  "space",
+  "system",
+  "intelligence",
+];
+
 const transitions: Transition[] = [
   {
-    trigger: "#about",
-    from: "build",
-    to: "system",
-    start: "top 92%",
-    end: "top 38%",
-  },
-  {
     trigger: "#now",
-    from: "system",
+    from: "intelligence",
     to: "build",
     start: "top 92%",
     end: "top 40%",
@@ -130,6 +132,63 @@ export function SitePhysicsDirector() {
           return;
         }
 
+        const labels = Array.from(
+          document.querySelectorAll<HTMLElement>(".material-label"),
+        );
+
+        const identityPresets = [
+          getMaterialPreset("build", viewport),
+          ...identityStates.map((state) => getMaterialPreset(state, viewport)),
+        ];
+
+        const setActiveLabel = (activeIndex: number) => {
+          labels.forEach((label, index) => {
+            gsap.set(label, {
+              opacity: index === activeIndex ? 1 : 0.2,
+              color:
+                index === activeIndex
+                  ? "var(--fg)"
+                  : "var(--muted)",
+            });
+          });
+        };
+
+        setActiveLabel(0);
+
+        const identityTrigger = ScrollTrigger.create({
+          trigger: "#about",
+          start: "top top",
+          end: "bottom bottom",
+          invalidateOnRefresh: true,
+          onUpdate: (self) => {
+            const transitionsCount = identityStates.length;
+            const scaled = Math.min(
+              self.progress * transitionsCount,
+              transitionsCount - 0.0001,
+            );
+            const index = Math.floor(scaled);
+            const localProgress = scaled - index;
+
+            applyMix(
+              modules,
+              identityPresets[index],
+              identityPresets[index + 1],
+              localProgress,
+            );
+            setActiveLabel(index);
+          },
+          onLeave: () => {
+            const last = identityPresets[identityPresets.length - 1];
+            applyMix(modules, last, last, 1);
+            setActiveLabel(identityStates.length - 1);
+          },
+          onLeaveBack: () => {
+            const first = identityPresets[0];
+            applyMix(modules, first, first, 1);
+            setActiveLabel(0);
+          },
+        });
+
         const triggers = transitions.map((transition) => {
           const from = getMaterialPreset(transition.from, viewport);
           const to = getMaterialPreset(transition.to, viewport);
@@ -149,7 +208,10 @@ export function SitePhysicsDirector() {
           });
         });
 
-        return () => triggers.forEach((trigger) => trigger.kill());
+        return () => {
+          identityTrigger.kill();
+          triggers.forEach((trigger) => trigger.kill());
+        };
       },
     );
 
