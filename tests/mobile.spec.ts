@@ -240,3 +240,35 @@ test("aktif proje metni malzeme sahnesiyle senkron kalır", async ({ page }) => 
     await expectNoHorizontalOverflow(page);
   }
 });
+
+
+test("404 sayfası aynı görsel dili korur ve taşmaz", async ({ page }) => {
+  await page.goto("/bu-yol-yok");
+
+  await expect(
+    page.getByRole("heading", { name: /Bu parça/i }),
+  ).toBeVisible();
+  await expect(page.getByText("10 = 10")).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+});
+
+test("sosyal görsel route'ları PNG döndürür", async ({ request }) => {
+  for (const path of ["/opengraph-image", "/twitter-image"]) {
+    const response = await request.get(path);
+    expect(response.ok()).toBeTruthy();
+    expect(response.headers()["content-type"]).toContain("image/png");
+  }
+});
+
+test("kamusal profil bağlantıları görünür ve güvenli açılır", async ({ page }) => {
+  await page.goto("/");
+  await page.locator(".site-footer").scrollIntoViewIfNeeded();
+
+  const links = page.locator(".footer-links a");
+  await expect(links).toHaveCount(3);
+
+  for (let index = 0; index < 3; index += 1) {
+    await expect(links.nth(index)).toHaveAttribute("target", "_blank");
+    await expect(links.nth(index)).toHaveAttribute("rel", /noreferrer/);
+  }
+});
