@@ -40,6 +40,12 @@ const PHRASES = [
   phrase("BİRŞEYİBAŞKAKURARIM", [2, 6, 11], "BİR ŞEYİ BAŞKA KURARIM"),
 ] as const;
 
+const FINALE = phrase(
+  "KAOSYENİSİSTEMKURAR",
+  [3, 7, 13],
+  "KAOS YENİ SİSTEM KURAR",
+);
+
 const WORDS = ["PARÇA", "AYIRIM", "ANLAM", "YAPI"] as const;
 const H = new Set([1, 7, 8, 11, 12, 18]);
 
@@ -180,6 +186,38 @@ function polygonPosition(slot: number, width: number, height: number) {
   };
 }
 
+function singularityPosition(index: number) {
+  const angle = -Math.PI / 2 + index * ((Math.PI * 2) / MODULUS);
+  const radius = 2 + mod(index * 5, 7) * 1.15;
+
+  return {
+    x: Math.cos(angle) * radius,
+    y: Math.sin(angle) * radius,
+    scale: 0.11 + mod(index * 3, 5) * 0.028,
+    opacity: 0.22 + mod(index * 7, 6) * 0.1,
+    rotation: mod(index * 137, 360) - 180,
+  };
+}
+
+function primeSpiralPosition(
+  index: number,
+  width: number,
+  height: number,
+) {
+  const minSide = Math.min(width, height);
+  const progress = index / (MODULUS - 1);
+  const angle = -Math.PI / 2 + index * ((Math.PI * 2 * TRI_REORDER) / MODULUS);
+  const radius = minSide * (0.035 + progress * 0.39);
+
+  return {
+    x: Math.cos(angle) * radius,
+    y: Math.sin(angle) * radius * 0.78,
+    scale: 0.48 + progress * 0.72,
+    opacity: 0.38 + progress * 0.62,
+    rotation: (angle * 180) / Math.PI + 90,
+  };
+}
+
 function chaosPosition(index: number, seed: number, width: number, height: number) {
   const minSide = Math.min(width, height);
   const slot = mod(index * 7 + seed * 5);
@@ -313,9 +351,15 @@ export function H19Scroll() {
                           ? "word-chaos"
                           : self.progress < 0.78
                             ? "question"
-                            : self.progress < 0.9
+                            : self.progress < 0.86
                               ? "matter"
-                              : "build";
+                              : self.progress < 0.92
+                                ? "build"
+                                : self.progress < 0.955
+                                  ? "singularity"
+                                  : self.progress < 0.985
+                                    ? "prime-spiral"
+                                    : "new-system";
           },
         },
       });
@@ -509,30 +553,66 @@ export function H19Scroll() {
         timeline.to({}, { duration: 0.68 });
       });
 
+      timeline.to({}, { duration: 0.55 });
+
       timeline.to(glyphs, {
-        x: (index) => {
-          const { width, height } = viewport();
-          return chaosPosition(index, 19, width, height).x;
+        x: (index) => singularityPosition(index).x,
+        y: (index) => singularityPosition(index).y,
+        scale: (index) => singularityPosition(index).scale,
+        opacity: (index) => singularityPosition(index).opacity,
+        rotation: (index) => singularityPosition(index).rotation,
+        duration: 1.55,
+        stagger: {
+          each: 0.012,
+          from: "edges",
         },
-        y: (index) => {
-          const { width, height } = viewport();
-          return chaosPosition(index, 19, width, height).y;
-        },
-        scale: (index) => {
-          const { width, height } = viewport();
-          return chaosPosition(index, 19, width, height).scale;
-        },
-        opacity: (index) => 0.24 + (index % 5) * 0.11,
-        duration: 1.4,
-        ease: "power4.inOut",
+        ease: "expo.in",
+      });
+
+      timeline.to({}, { duration: 0.48 });
+
+      timeline.set(glyphs, {
+        textContent: (index: number) => FINALE.letters[index],
       });
 
       timeline.to(glyphs, {
-        x: (index) => phraseX(index, viewport().width, PHRASES[3].breaks),
+        x: (index) => {
+          const { width, height } = viewport();
+          return primeSpiralPosition(index, width, height).x;
+        },
+        y: (index) => {
+          const { width, height } = viewport();
+          return primeSpiralPosition(index, width, height).y;
+        },
+        scale: (index) => {
+          const { width, height } = viewport();
+          return primeSpiralPosition(index, width, height).scale;
+        },
+        opacity: (index) => {
+          const { width, height } = viewport();
+          return primeSpiralPosition(index, width, height).opacity;
+        },
+        rotation: (index) => {
+          const { width, height } = viewport();
+          return primeSpiralPosition(index, width, height).rotation;
+        },
+        duration: 1.7,
+        stagger: {
+          each: 0.018,
+          from: "center",
+        },
+        ease: "expo.out",
+      });
+
+      timeline.to({}, { duration: 0.55 });
+
+      timeline.to(glyphs, {
+        x: (index) => phraseX(index, viewport().width, FINALE.breaks),
         y: 0,
         scale: 1,
         opacity: 1,
-        duration: 1.35,
+        rotation: 0,
+        duration: 1.45,
         stagger: {
           each: 0.014,
           from: "edges",
@@ -540,7 +620,7 @@ export function H19Scroll() {
         ease: "expo.inOut",
       });
 
-      timeline.to({}, { duration: 1.15 });
+      timeline.to({}, { duration: 1.35 });
     }, root);
 
     return () => context.revert();
@@ -556,7 +636,7 @@ export function H19Scroll() {
       >
         <div ref={stage} className={styles.stage}>
           <p className={styles.srOnly}>
-            {PHRASES.map((item) => item.spoken).join(". ")}.
+            {[...PHRASES.map((item) => item.spoken), FINALE.spoken].join(". ")}.
           </p>
 
           <div className={styles.field} aria-hidden="true">
