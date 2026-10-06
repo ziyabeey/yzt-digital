@@ -7,7 +7,7 @@
 
 .sequence {
   position: relative;
-  height: 1240svh;
+  height: 2200svh;
   background: #000;
   overflow: clip;
 }
@@ -63,7 +63,7 @@
 
 @media (max-width: 640px) {
   .sequence {
-    height: 1140svh;
+    height: 1980svh;
   }
 
   .glyph {
