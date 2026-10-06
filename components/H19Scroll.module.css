@@ -1,0 +1,78 @@
+.page {
+  min-height: 100svh;
+  margin: 0;
+  background: #000;
+  color: #f3f1ea;
+}
+
+.sequence {
+  position: relative;
+  height: 720svh;
+  background: #000;
+  overflow: clip;
+}
+
+.stage {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  overflow: hidden;
+  background: #000;
+  isolation: isolate;
+}
+
+.field {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.glyph {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: block;
+  width: 1em;
+  height: 1em;
+  margin: -0.5em 0 0 -0.5em;
+  font-family: "Iowan Old Style", "Baskerville", "Times New Roman", serif;
+  font-size: clamp(1.1rem, 2vw, 2rem);
+  font-weight: 400;
+  line-height: 1;
+  text-align: center;
+  color: #f3f1ea;
+  transform-origin: 50% 50%;
+  will-change: transform;
+  user-select: none;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: geometricPrecision;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 640px) {
+  .sequence {
+    height: 660svh;
+  }
+
+  .glyph {
+    font-size: clamp(0.98rem, 4.8vw, 1.28rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sequence {
+    height: 100svh;
+  }
+}
