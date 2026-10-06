@@ -5,7 +5,6 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import styles from "./H19Scroll.module.css";
 
-const LETTERS = Array.from("PARÇALARINAAYIRIRIM");
 const MODULUS = 19;
 const HEX_ROTATION = 8;
 const TRI_REORDER = 7;
@@ -18,6 +17,30 @@ type Axial = {
 
 type OrbitName = "0" | "H" | "2H" | "9H";
 
+type PhraseState = {
+  letters: string[];
+  breaks: number[];
+  spoken: string;
+};
+
+const phrase = (raw: string, breaks: number[], spoken: string): PhraseState => {
+  const letters = Array.from(raw);
+
+  if (letters.length !== MODULUS) {
+    throw new Error(`Every phrase must contain exactly ${MODULUS} letters.`);
+  }
+
+  return { letters, breaks, spoken };
+};
+
+const PHRASES = [
+  phrase("PARÇALARINAAYIRIRIM", [10], "PARÇALARINA AYIRIRIM"),
+  phrase("BAŞKATÜRLÜKURULURMU", [4, 9, 16], "BAŞKA TÜRLÜ KURULUR MU"),
+  phrase("AYNIMADDEBAŞKADÜZEN", [3, 8, 13], "AYNI MADDE BAŞKA DÜZEN"),
+  phrase("BİRŞEYİBAŞKAKURARIM", [2, 6, 11], "BİR ŞEYİ BAŞKA KURARIM"),
+] as const;
+
+const WORDS = ["PARÇA", "AYIRIM", "ANLAM", "YAPI"] as const;
 const H = new Set([1, 7, 8, 11, 12, 18]);
 
 function mod(value: number, base = MODULUS) {
@@ -89,13 +112,15 @@ function orbitStep(id: number) {
   throw new Error(`H19 orbit step missing for ${id}`);
 }
 
-function phraseX(index: number, width: number) {
-  const phraseUnits = 20;
-  const available = Math.min(width * 0.84, 960);
-  const unit = available / phraseUnits;
-  const logicalIndex = index <= 10 ? index : index + 1;
+function phraseX(index: number, width: number, breaks: number[]) {
+  const gap = 0.9;
+  const gapsBefore = breaks.filter((boundary) => boundary < index).length;
+  const totalUnits = MODULUS + breaks.length * gap;
+  const available = Math.min(width * 0.88, 1120);
+  const unit = available / totalUnits;
+  const logical = index + gapsBefore * gap;
 
-  return (logicalIndex - phraseUnits / 2 + 0.5) * unit;
+  return (logical - (totalUnits - 1) / 2) * unit;
 }
 
 function cellPosition(id: number, width: number, height: number) {
@@ -155,6 +180,70 @@ function polygonPosition(slot: number, width: number, height: number) {
   };
 }
 
+function chaosPosition(index: number, seed: number, width: number, height: number) {
+  const minSide = Math.min(width, height);
+  const slot = mod(index * 7 + seed * 5);
+  const angle =
+    -Math.PI / 2 +
+    slot * ((Math.PI * 2) / MODULUS) +
+    Math.sin((index + 1) * (seed + 2)) * 0.36;
+  const depth = mod(index * 11 + seed * 7, MODULUS) / (MODULUS - 1);
+  const radius = minSide * (0.16 + depth * 0.38);
+  const squeeze = 0.72 + (seed % 3) * 0.06;
+
+  return {
+    x: Math.cos(angle) * radius,
+    y: Math.sin(angle) * radius * squeeze,
+    scale: 0.52 + mod(index * 3 + seed, 8) * 0.065,
+    opacity: 0.14 + mod(index * 5 + seed, 7) * 0.045,
+  };
+}
+
+function findWordIndices(source: string[], word: string) {
+  const used = new Set<number>();
+
+  return Array.from(word).map((letter) => {
+    const index = source.findIndex(
+      (candidate, candidateIndex) =>
+        candidate === letter && !used.has(candidateIndex),
+    );
+
+    if (index === -1) {
+      throw new Error(`Cannot form ${word} from the current 19-letter field.`);
+    }
+
+    used.add(index);
+    return index;
+  });
+}
+
+const WORD_INDEXES = WORDS.map((word) => ({
+  word,
+  indices: findWordIndices(PHRASES[0].letters, word),
+}));
+
+function wordPosition(
+  index: number,
+  selected: number[],
+  seed: number,
+  width: number,
+  height: number,
+) {
+  const order = selected.indexOf(index);
+
+  if (order >= 0) {
+    const spacing = Math.min(width * 0.115, 122);
+    return {
+      x: (order - (selected.length - 1) / 2) * spacing,
+      y: 0,
+      scale: width < 640 ? 2.25 : 3.05,
+      opacity: 1,
+    };
+  }
+
+  return chaosPosition(index, seed, width, height);
+}
+
 export function H19Scroll() {
   const root = useRef<HTMLElement>(null);
   const stage = useRef<HTMLDivElement>(null);
@@ -206,23 +295,27 @@ export function H19Scroll() {
           trigger: section,
           start: "top top",
           end: "bottom bottom",
-          scrub: 0.8,
+          scrub: 0.72,
           invalidateOnRefresh: true,
           onUpdate: (self) => {
             section.dataset.phase =
-              self.progress < 0.07
+              self.progress < 0.045
                 ? "line"
-                : self.progress < 0.18
+                : self.progress < 0.11
                   ? "hex"
-                  : self.progress < 0.43
+                  : self.progress < 0.26
                     ? "h19-orbit"
-                    : self.progress < 0.54
-                      ? "split"
-                      : self.progress < 0.79
-                        ? "cosets"
-                        : self.progress < 0.88
-                          ? "prime-ring"
-                          : "reorder";
+                    : self.progress < 0.35
+                      ? "cosets"
+                      : self.progress < 0.46
+                        ? "prime-ring"
+                        : self.progress < 0.66
+                          ? "word-chaos"
+                          : self.progress < 0.78
+                            ? "question"
+                            : self.progress < 0.9
+                              ? "matter"
+                              : "build";
           },
         },
       });
@@ -230,7 +323,7 @@ export function H19Scroll() {
       timeline.fromTo(
         glyphs,
         {
-          x: (index) => phraseX(index, viewport().width),
+          x: (index) => phraseX(index, viewport().width, PHRASES[0].breaks),
           y: 0,
           scale: 1,
           opacity: 1,
@@ -245,41 +338,35 @@ export function H19Scroll() {
             return cellPosition(index, width, height).y;
           },
           scale: (index) => ringScale(CELLS[index].ring),
-          duration: 1.45,
+          duration: 1.35,
           stagger: {
-            each: 0.018,
+            each: 0.015,
             from: "center",
           },
         },
-        0.72,
+        0.6,
       );
 
-      timeline.to({}, { duration: 0.42 });
+      timeline.to({}, { duration: 0.32 });
 
       for (let step = 1; step <= 6; step += 1) {
         const multiplier = powerMod(HEX_ROTATION, step);
 
-        timeline.to(
-          glyphs,
-          {
-            x: (index) => {
-              const target = mod(index * multiplier);
-              const { width, height } = viewport();
-              return cellPosition(target, width, height).x;
-            },
-            y: (index) => {
-              const target = mod(index * multiplier);
-              const { width, height } = viewport();
-              return cellPosition(target, width, height).y;
-            },
-            duration: 0.72,
-            ease: "sine.inOut",
+        timeline.to(glyphs, {
+          x: (index) => {
+            const target = mod(index * multiplier);
+            const { width, height } = viewport();
+            return cellPosition(target, width, height).x;
           },
-          ">",
-        );
+          y: (index) => {
+            const target = mod(index * multiplier);
+            const { width, height } = viewport();
+            return cellPosition(target, width, height).y;
+          },
+          duration: 0.58,
+          ease: "sine.inOut",
+        });
       }
-
-      timeline.to({}, { duration: 0.5 });
 
       timeline.to(glyphs, {
         x: (index) => {
@@ -294,36 +381,28 @@ export function H19Scroll() {
           const { width, height } = viewport();
           return orbitPosition(index, width, height).scale;
         },
-        duration: 1.6,
+        duration: 1.25,
         stagger: {
-          each: 0.014,
+          each: 0.012,
           from: "center",
         },
         ease: "expo.inOut",
       });
 
-      timeline.to({}, { duration: 0.42 });
-
       for (let turn = 1; turn <= 6; turn += 1) {
-        timeline.to(
-          glyphs,
-          {
-            x: (index) => {
-              const { width, height } = viewport();
-              return orbitPosition(index, width, height, turn).x;
-            },
-            y: (index) => {
-              const { width, height } = viewport();
-              return orbitPosition(index, width, height, turn).y;
-            },
-            duration: 0.68,
-            ease: "sine.inOut",
+        timeline.to(glyphs, {
+          x: (index) => {
+            const { width, height } = viewport();
+            return orbitPosition(index, width, height, turn).x;
           },
-          ">",
-        );
+          y: (index) => {
+            const { width, height } = viewport();
+            return orbitPosition(index, width, height, turn).y;
+          },
+          duration: 0.54,
+          ease: "sine.inOut",
+        });
       }
-
-      timeline.to({}, { duration: 0.55 });
 
       timeline.to(glyphs, {
         x: (index) => {
@@ -334,44 +413,134 @@ export function H19Scroll() {
           const { width, height } = viewport();
           return polygonPosition(index, width, height).y;
         },
-        scale: (index) => {
-          const { width, height } = viewport();
-          return polygonPosition(index, width, height).scale;
-        },
-        duration: 1.5,
-        stagger: {
-          each: 0.012,
-          from: "center",
-        },
+        scale: 0.84,
+        opacity: 1,
+        duration: 1.25,
         ease: "expo.inOut",
       });
-
-      timeline.to({}, { duration: 0.35 });
 
       for (let step = 1; step <= 3; step += 1) {
         const multiplier = powerMod(TRI_REORDER, step);
 
-        timeline.to(
-          glyphs,
-          {
-            x: (index) => {
-              const target = mod(index * multiplier);
-              const { width, height } = viewport();
-              return polygonPosition(target, width, height).x;
-            },
-            y: (index) => {
-              const target = mod(index * multiplier);
-              const { width, height } = viewport();
-              return polygonPosition(target, width, height).y;
-            },
-            duration: 0.92,
-            ease: "power3.inOut",
+        timeline.to(glyphs, {
+          x: (index) => {
+            const target = mod(index * multiplier);
+            const { width, height } = viewport();
+            return polygonPosition(target, width, height).x;
           },
-          ">",
-        );
+          y: (index) => {
+            const target = mod(index * multiplier);
+            const { width, height } = viewport();
+            return polygonPosition(target, width, height).y;
+          },
+          duration: 0.72,
+          ease: "power3.inOut",
+        });
       }
 
-      timeline.to({}, { duration: 0.95 });
+      timeline.to({}, { duration: 0.35 });
+
+      WORD_INDEXES.forEach(({ indices }, wordIndex) => {
+        timeline.to(glyphs, {
+          x: (index) => {
+            const { width, height } = viewport();
+            return wordPosition(index, indices, wordIndex + 1, width, height).x;
+          },
+          y: (index) => {
+            const { width, height } = viewport();
+            return wordPosition(index, indices, wordIndex + 1, width, height).y;
+          },
+          scale: (index) => {
+            const { width, height } = viewport();
+            return wordPosition(index, indices, wordIndex + 1, width, height).scale;
+          },
+          opacity: (index) => {
+            const { width, height } = viewport();
+            return wordPosition(index, indices, wordIndex + 1, width, height).opacity;
+          },
+          duration: 1.05,
+          ease: "expo.inOut",
+        });
+
+        timeline.to({}, { duration: 0.42 });
+      });
+
+      PHRASES.slice(1).forEach((nextPhrase, phraseIndex) => {
+        const seed = phraseIndex + 7;
+
+        timeline.to(glyphs, {
+          x: (index) => {
+            const { width, height } = viewport();
+            return chaosPosition(index, seed, width, height).x;
+          },
+          y: (index) => {
+            const { width, height } = viewport();
+            return chaosPosition(index, seed, width, height).y;
+          },
+          scale: (index) => {
+            const { width, height } = viewport();
+            return chaosPosition(index, seed, width, height).scale;
+          },
+          opacity: (index) => {
+            const { width, height } = viewport();
+            return chaosPosition(index, seed, width, height).opacity;
+          },
+          duration: 0.92,
+          ease: "power4.inOut",
+        });
+
+        timeline.set(glyphs, {
+          textContent: (index: number) => nextPhrase.letters[index],
+        });
+
+        timeline.to(glyphs, {
+          x: (index) => phraseX(index, viewport().width, nextPhrase.breaks),
+          y: 0,
+          scale: 1,
+          opacity: 1,
+          duration: 1.15,
+          stagger: {
+            each: 0.01,
+            from: phraseIndex % 2 === 0 ? "edges" : "center",
+          },
+          ease: "expo.inOut",
+        });
+
+        timeline.to({}, { duration: 0.68 });
+      });
+
+      timeline.to(glyphs, {
+        x: (index) => {
+          const { width, height } = viewport();
+          return chaosPosition(index, 19, width, height).x;
+        },
+        y: (index) => {
+          const { width, height } = viewport();
+          return chaosPosition(index, 19, width, height).y;
+        },
+        scale: (index) => {
+          const { width, height } = viewport();
+          return chaosPosition(index, 19, width, height).scale;
+        },
+        opacity: (index) => 0.24 + (index % 5) * 0.11,
+        duration: 1.4,
+        ease: "power4.inOut",
+      });
+
+      timeline.to(glyphs, {
+        x: (index) => phraseX(index, viewport().width, PHRASES[3].breaks),
+        y: 0,
+        scale: 1,
+        opacity: 1,
+        duration: 1.35,
+        stagger: {
+          each: 0.014,
+          from: "random",
+        },
+        ease: "expo.inOut",
+      });
+
+      timeline.to({}, { duration: 1.15 });
     }, root);
 
     return () => context.revert();
@@ -386,10 +555,12 @@ export function H19Scroll() {
         aria-label="H19 tipografik hareket deneyi"
       >
         <div ref={stage} className={styles.stage}>
-          <p className={styles.srOnly}>PARÇALARINA AYIRIRIM</p>
+          <p className={styles.srOnly}>
+            {PHRASES.map((item) => item.spoken).join(". ")}.
+          </p>
 
           <div className={styles.field} aria-hidden="true">
-            {LETTERS.map((letter, index) => (
+            {PHRASES[0].letters.map((letter, index) => (
               <span
                 className={styles.glyph}
                 data-h19-glyph
