@@ -1096,8 +1096,11 @@ export function H19Scroll() {
           ease: "expo.in",
         });
 
-        timeline.set(glyphs, {
+        timeline.set(faces, {
           textContent: (index: number) => nextPhrase.letters[index],
+        });
+
+        timeline.set(glyphs, {
           x: (index: number) => {
             const { width, height } = viewport();
             return cinematicGatePosition(index, width, height, 1, seed + 1).x;
@@ -1147,7 +1150,7 @@ export function H19Scroll() {
 
       timeline.to({}, { duration: 0.48 });
 
-      timeline.set(glyphs, {
+      timeline.set(faces, {
         textContent: (index: number) => FINALE.letters[index],
       });
 
@@ -1224,8 +1227,11 @@ export function H19Scroll() {
         ease: "expo.in",
       });
 
-      timeline.set(glyphs, {
+      timeline.set(faces, {
         textContent: (index: number) => SYSTEM_PHRASES.kepenk.letters[index],
+      });
+
+      timeline.set(glyphs, {
         x: (index: number) => {
           const { width, height } = viewport();
           return cinematicGatePosition(index, width, height, 1, 24).x;
@@ -1249,7 +1255,7 @@ export function H19Scroll() {
 
       timeline.to({}, { duration: 0.68 });
 
-      timeline.set(glyphs, {
+      timeline.set(faces, {
         textContent: (index: number) => BOOKING_TOKENS[index],
       });
 
@@ -1278,7 +1284,7 @@ export function H19Scroll() {
 
       timeline.to({}, { duration: 0.62 });
 
-      timeline.set(glyphs, {
+      timeline.set(faces, {
         textContent: (index: number) => SYSTEM_PHRASES.randevu.letters[index],
       });
 
@@ -1295,7 +1301,7 @@ export function H19Scroll() {
 
       timeline.to({}, { duration: 0.64 });
 
-      timeline.set(glyphs, {
+      timeline.set(faces, {
         textContent: (index: number) => SYSTEM_PHRASES.time.letters[index],
       });
 
@@ -1354,8 +1360,11 @@ export function H19Scroll() {
         ease: "expo.in",
       });
 
-      timeline.set(glyphs, {
+      timeline.set(faces, {
         textContent: (index: number) => MATH_TOKENS[index],
+      });
+
+      timeline.set(glyphs, {
         x: (index: number) => {
           const { width, height } = viewport();
           return cinematicGatePosition(index, width, height, 1, 32).x;
@@ -1401,7 +1410,7 @@ export function H19Scroll() {
         });
       }
 
-      timeline.set(glyphs, {
+      timeline.set(faces, {
         textContent: (index: number) => SYSTEM_PHRASES.math.letters[index],
       });
 
@@ -1435,8 +1444,11 @@ export function H19Scroll() {
         ease: "expo.in",
       });
 
-      timeline.set(glyphs, {
+      timeline.set(faces, {
         textContent: (index: number) => EARTH_TOKENS[index],
+      });
+
+      timeline.set(glyphs, {
         x: (index: number) => {
           const { width, height } = viewport();
           return cinematicGatePosition(index, width, height, 1, 38).x;
@@ -1473,7 +1485,7 @@ export function H19Scroll() {
         ease: "sine.inOut",
       });
 
-      timeline.set(glyphs, {
+      timeline.set(faces, {
         textContent: (index: number) => SYSTEM_PHRASES.earth.letters[index],
       });
 
@@ -1507,8 +1519,11 @@ export function H19Scroll() {
         ease: "expo.in",
       });
 
-      timeline.set(glyphs, {
+      timeline.set(faces, {
         textContent: (index: number) => SYSTEM_PHRASES.human.letters[index],
+      });
+
+      timeline.set(glyphs, {
         x: (index: number) => {
           const { width, height } = viewport();
           return cinematicGatePosition(index, width, height, 1, 44).x;
@@ -1552,7 +1567,7 @@ export function H19Scroll() {
 
       timeline.to({}, { duration: 0.88 });
 
-      timeline.set(glyphs, {
+      timeline.set(faces, {
         textContent: (index: number) => SYSTEM_PHRASES.benefit.letters[index],
       });
 
@@ -1586,7 +1601,7 @@ export function H19Scroll() {
         ease: "expo.in",
       });
 
-      timeline.set(glyphs, {
+      timeline.set(faces, {
         textContent: (index: number) => SYSTEM_PHRASES.virtue.letters[index],
       });
 
