@@ -381,6 +381,27 @@ function primeSpiralPosition(
   };
 }
 
+function cinematicGatePosition(
+  index: number,
+  width: number,
+  height: number,
+  side: -1 | 1,
+  seed: number,
+) {
+  const rank = index - (MODULUS - 1) / 2;
+  const edge = width * 0.62 + Math.abs(rank) * Math.min(width * 0.012, 14);
+  const wave = Math.sin((index + 1) * (seed + 1) * 0.73);
+  const vertical = Math.min(height * 0.22, 170);
+
+  return {
+    x: side * edge,
+    y: wave * vertical,
+    scale: 0.42 + mod(index * 5 + seed, 7) * 0.075,
+    opacity: 0.14 + mod(index * 3 + seed, 6) * 0.09,
+    rotation: side * (18 + wave * 24),
+  };
+}
+
 function bookingPosition(index: number, width: number, height: number) {
   const columns = 5;
   const row = Math.floor(index / columns);
@@ -970,26 +991,43 @@ export function H19Scroll() {
         timeline.to(glyphs, {
           x: (index) => {
             const { width, height } = viewport();
-            return chaosPosition(index, seed, width, height).x;
+            return cinematicGatePosition(index, width, height, -1, seed).x;
           },
           y: (index) => {
             const { width, height } = viewport();
-            return chaosPosition(index, seed, width, height).y;
+            return cinematicGatePosition(index, width, height, -1, seed).y;
           },
           scale: (index) => {
             const { width, height } = viewport();
-            return chaosPosition(index, seed, width, height).scale;
+            return cinematicGatePosition(index, width, height, -1, seed).scale;
           },
           opacity: (index) => {
             const { width, height } = viewport();
-            return chaosPosition(index, seed, width, height).opacity;
+            return cinematicGatePosition(index, width, height, -1, seed).opacity;
           },
-          duration: 0.92,
-          ease: "power4.inOut",
+          rotation: (index) => {
+            const { width, height } = viewport();
+            return cinematicGatePosition(index, width, height, -1, seed).rotation;
+          },
+          duration: 0.94,
+          stagger: { each: 0.012, from: "start" },
+          ease: "expo.in",
         });
 
         timeline.set(glyphs, {
           textContent: (index: number) => nextPhrase.letters[index],
+          x: (index: number) => {
+            const { width, height } = viewport();
+            return cinematicGatePosition(index, width, height, 1, seed + 1).x;
+          },
+          y: (index: number) => {
+            const { width, height } = viewport();
+            return cinematicGatePosition(index, width, height, 1, seed + 1).y;
+          },
+          rotation: (index: number) => {
+            const { width, height } = viewport();
+            return cinematicGatePosition(index, width, height, 1, seed + 1).rotation;
+          },
         });
 
         timeline.to(glyphs, {
@@ -997,15 +1035,16 @@ export function H19Scroll() {
           y: 0,
           scale: 1,
           opacity: 1,
-          duration: 1.15,
+          rotation: 0,
+          duration: 1.22,
           stagger: {
-            each: 0.01,
-            from: phraseIndex % 2 === 0 ? "edges" : "center",
+            each: 0.012,
+            from: "start",
           },
-          ease: "expo.inOut",
+          ease: "expo.out",
         });
 
-        timeline.to({}, { duration: 0.68 });
+        timeline.to({}, { duration: 0.5 });
       });
 
       timeline.to({}, { duration: 0.55 });
@@ -1075,32 +1114,44 @@ export function H19Scroll() {
         ease: "expo.inOut",
       });
 
-      timeline.to({}, { duration: 0.82 });
+      timeline.to({}, { duration: 0.7 });
 
       timeline.to(glyphs, {
         x: (index) => {
           const { width, height } = viewport();
-          return chaosPosition(index, 23, width, height).x;
+          return cinematicGatePosition(index, width, height, -1, 23).x;
         },
         y: (index) => {
           const { width, height } = viewport();
-          return chaosPosition(index, 23, width, height).y;
+          return cinematicGatePosition(index, width, height, -1, 23).y;
         },
         scale: (index) => {
           const { width, height } = viewport();
-          return chaosPosition(index, 23, width, height).scale;
+          return cinematicGatePosition(index, width, height, -1, 23).scale;
         },
         opacity: (index) => {
           const { width, height } = viewport();
-          return chaosPosition(index, 23, width, height).opacity;
+          return cinematicGatePosition(index, width, height, -1, 23).opacity;
         },
-        rotation: (index) => mod(index * 47, 120) - 60,
-        duration: 1.05,
-        ease: "power4.inOut",
+        rotation: (index) => {
+          const { width, height } = viewport();
+          return cinematicGatePosition(index, width, height, -1, 23).rotation;
+        },
+        duration: 1.0,
+        stagger: { each: 0.014, from: "start" },
+        ease: "expo.in",
       });
 
       timeline.set(glyphs, {
         textContent: (index: number) => SYSTEM_PHRASES.kepenk.letters[index],
+        x: (index: number) => {
+          const { width, height } = viewport();
+          return cinematicGatePosition(index, width, height, 1, 24).x;
+        },
+        y: (index: number) => {
+          const { width, height } = viewport();
+          return cinematicGatePosition(index, width, height, 1, 24).y;
+        },
       });
 
       timeline.to(glyphs, {
@@ -1109,9 +1160,9 @@ export function H19Scroll() {
         scale: 1,
         opacity: 1,
         rotation: 0,
-        duration: 1.25,
-        stagger: { each: 0.012, from: "edges" },
-        ease: "expo.inOut",
+        duration: 1.35,
+        stagger: { each: 0.014, from: "start" },
+        ease: "expo.out",
       });
 
       timeline.to({}, { duration: 0.68 });
@@ -1204,8 +1255,33 @@ export function H19Scroll() {
 
       timeline.to({}, { duration: 0.68 });
 
+      timeline.to(glyphs, {
+        x: (index) => {
+          const { width, height } = viewport();
+          return cinematicGatePosition(index, width, height, -1, 31).x;
+        },
+        y: (index) => {
+          const { width, height } = viewport();
+          return cinematicGatePosition(index, width, height, -1, 31).y;
+        },
+        scale: 0.56,
+        opacity: 0.28,
+        rotation: -18,
+        duration: 0.88,
+        stagger: { each: 0.01, from: "start" },
+        ease: "expo.in",
+      });
+
       timeline.set(glyphs, {
         textContent: (index: number) => MATH_TOKENS[index],
+        x: (index: number) => {
+          const { width, height } = viewport();
+          return cinematicGatePosition(index, width, height, 1, 32).x;
+        },
+        y: (index: number) => {
+          const { width, height } = viewport();
+          return cinematicGatePosition(index, width, height, 1, 32).y;
+        },
       });
 
       timeline.to(glyphs, {
@@ -1260,8 +1336,33 @@ export function H19Scroll() {
 
       timeline.to({}, { duration: 0.7 });
 
+      timeline.to(glyphs, {
+        x: (index) => {
+          const { width, height } = viewport();
+          return cinematicGatePosition(index, width, height, -1, 37).x;
+        },
+        y: (index) => {
+          const { width, height } = viewport();
+          return cinematicGatePosition(index, width, height, -1, 37).y;
+        },
+        scale: 0.52,
+        opacity: 0.24,
+        rotation: -16,
+        duration: 0.92,
+        stagger: { each: 0.012, from: "start" },
+        ease: "expo.in",
+      });
+
       timeline.set(glyphs, {
         textContent: (index: number) => EARTH_TOKENS[index],
+        x: (index: number) => {
+          const { width, height } = viewport();
+          return cinematicGatePosition(index, width, height, 1, 38).x;
+        },
+        y: (index: number) => {
+          const { width, height } = viewport();
+          return cinematicGatePosition(index, width, height, 1, 38).y;
+        },
       });
 
       timeline.to(glyphs, {
@@ -1307,8 +1408,33 @@ export function H19Scroll() {
 
       timeline.to({}, { duration: 0.78 });
 
+      timeline.to(glyphs, {
+        x: (index) => {
+          const { width, height } = viewport();
+          return cinematicGatePosition(index, width, height, -1, 43).x;
+        },
+        y: (index) => {
+          const { width, height } = viewport();
+          return cinematicGatePosition(index, width, height, -1, 43).y;
+        },
+        scale: 0.5,
+        opacity: 0.22,
+        rotation: -14,
+        duration: 0.9,
+        stagger: { each: 0.012, from: "start" },
+        ease: "expo.in",
+      });
+
       timeline.set(glyphs, {
         textContent: (index: number) => SYSTEM_PHRASES.human.letters[index],
+        x: (index: number) => {
+          const { width, height } = viewport();
+          return cinematicGatePosition(index, width, height, 1, 44).x;
+        },
+        y: (index: number) => {
+          const { width, height } = viewport();
+          return cinematicGatePosition(index, width, height, 1, 44).y;
+        },
       });
 
       timeline.to(glyphs, {
