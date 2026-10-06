@@ -530,6 +530,7 @@ function wordPosition(
 export function H19Scroll() {
   const root = useRef<HTMLElement>(null);
   const stage = useRef<HTMLDivElement>(null);
+  const cursorField = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
     if (!root.current || !stage.current) return;
@@ -538,10 +539,17 @@ export function H19Scroll() {
 
     const context = gsap.context(() => {
       const glyphs = gsap.utils.toArray<HTMLElement>("[data-h19-glyph]");
+      const faces = gsap.utils.toArray<HTMLElement>("[data-h19-face]");
       const section = root.current;
       const canvas = stage.current;
+      const cursor = cursorField.current;
 
-      if (!section || !canvas || glyphs.length !== MODULUS) return;
+      if (
+        !section ||
+        !canvas ||
+        glyphs.length !== MODULUS ||
+        faces.length !== MODULUS
+      ) return;
 
       const viewport = () => {
         const bounds = canvas.getBoundingClientRect();
@@ -551,6 +559,80 @@ export function H19Scroll() {
       const prefersReducedMotion = window.matchMedia(
         "(prefers-reduced-motion: reduce)",
       ).matches;
+      const hasFinePointer = window.matchMedia("(pointer: fine)").matches;
+
+      const faceX = faces.map((face) =>
+        gsap.quickTo(face, "x", { duration: 0.34, ease: "power3.out" }),
+      );
+      const faceY = faces.map((face) =>
+        gsap.quickTo(face, "y", { duration: 0.34, ease: "power3.out" }),
+      );
+
+      const cursorX = cursor
+        ? gsap.quickTo(cursor, "x", { duration: 0.16, ease: "power3.out" })
+        : null;
+      const cursorY = cursor
+        ? gsap.quickTo(cursor, "y", { duration: 0.16, ease: "power3.out" })
+        : null;
+
+      const resetPointerField = () => {
+        faces.forEach((face, index) => {
+          faceX[index](0);
+          faceY[index](0);
+        });
+
+        if (cursor) {
+          gsap.to(cursor, { opacity: 0, scale: 0.82, duration: 0.28 });
+        }
+      };
+
+      const onPointerMove = (event: PointerEvent) => {
+        if (!hasFinePointer || prefersReducedMotion) return;
+
+        const bounds = canvas.getBoundingClientRect();
+        const localX = event.clientX - bounds.left;
+        const localY = event.clientY - bounds.top;
+        const radius = Math.min(Math.max(bounds.width * 0.14, 120), 210);
+        const strength = Math.min(Math.max(bounds.width * 0.055, 44), 86);
+
+        if (cursor && cursorX && cursorY) {
+          cursorX(localX);
+          cursorY(localY);
+          gsap.to(cursor, { opacity: 0.74, scale: 1, duration: 0.2 });
+        }
+
+        glyphs.forEach((glyph, index) => {
+          const rect = glyph.getBoundingClientRect();
+          const centerX = rect.left + rect.width / 2;
+          const centerY = rect.top + rect.height / 2;
+          const dx = centerX - event.clientX;
+          const dy = centerY - event.clientY;
+          const distance = Math.hypot(dx, dy);
+
+          if (distance >= radius || distance === 0) {
+            faceX[index](0);
+            faceY[index](0);
+            return;
+          }
+
+          const falloff = Math.pow(1 - distance / radius, 1.7);
+          const force = strength * falloff;
+          faceX[index]((dx / distance) * force);
+          faceY[index]((dy / distance) * force);
+        });
+      };
+
+      if (hasFinePointer && !prefersReducedMotion) {
+        window.addEventListener("pointermove", onPointerMove, { passive: true });
+        window.addEventListener("blur", resetPointerField);
+        document.documentElement.addEventListener("mouseleave", resetPointerField);
+
+        context.add(() => {
+          window.removeEventListener("pointermove", onPointerMove);
+          window.removeEventListener("blur", resetPointerField);
+          document.documentElement.removeEventListener("mouseleave", resetPointerField);
+        });
+      }
 
       if (prefersReducedMotion) {
         const { width, height } = viewport();
@@ -1558,6 +1640,12 @@ export function H19Scroll() {
             ].join(". ")}.
           </p>
 
+          <div
+            ref={cursorField}
+            className={styles.cursorField}
+            aria-hidden="true"
+          />
+
           <div className={styles.field} aria-hidden="true">
             {PHRASES[0].letters.map((letter, index) => (
               <span
@@ -1569,7 +1657,9 @@ export function H19Scroll() {
                 data-h19-orbit-step={orbitStep(index)}
                 key={`${index}-${letter}`}
               >
-                {letter}
+                <span className={styles.glyphFace} data-h19-face>
+                  {letter}
+                </span>
               </span>
             ))}
           </div>
