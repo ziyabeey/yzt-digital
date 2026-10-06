@@ -46,5 +46,5 @@ jobs:
       - name: Vinext build
         run: npm run build:vinext
 
-      - name: Deploy preview
-        run: npm run cloudflare:preview
+      - name: Deploy H19 preview domain
+        run: npm run cloudflare:deploy
