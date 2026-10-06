@@ -1,11 +1,17 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "yzt-digital",
+  "name": "yzt-digital-h19",
   "compatibility_date": "2026-09-25",
   "compatibility_flags": ["nodejs_compat"],
   "main": "vinext/server/app-router-entry",
   "workers_dev": true,
   "preview_urls": true,
+  "routes": [
+    {
+      "pattern": "h19.yzt.digital",
+      "custom_domain": true
+    }
+  ],
   "assets": {
     "not_found_handling": "none"
   }
