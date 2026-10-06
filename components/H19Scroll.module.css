@@ -7,7 +7,7 @@
 
 .sequence {
   position: relative;
-  height: 720svh;
+  height: 980svh;
   background: #000;
   overflow: clip;
 }
@@ -37,7 +37,7 @@
   height: 1em;
   margin: -0.5em 0 0 -0.5em;
   font-family: "Iowan Old Style", "Baskerville", "Times New Roman", serif;
-  font-size: clamp(1.1rem, 2vw, 2rem);
+  font-size: clamp(1.2rem, 2.6vw, 2.65rem);
   font-weight: 400;
   line-height: 1;
   text-align: center;
@@ -63,11 +63,11 @@
 
 @media (max-width: 640px) {
   .sequence {
-    height: 660svh;
+    height: 900svh;
   }
 
   .glyph {
-    font-size: clamp(0.98rem, 4.8vw, 1.28rem);
+    font-size: clamp(1rem, 5vw, 1.35rem);
   }
 }
 
