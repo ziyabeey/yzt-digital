@@ -46,6 +46,64 @@ const FINALE = phrase(
   "KAOS YENİ SİSTEM KURAR",
 );
 
+const SYSTEM_PHRASES = {
+  kepenk: phrase(
+    "KEPENKZAMANAYERAÇAR",
+    [5, 11, 14],
+    "KEPENK ZAMANA YER AÇAR",
+  ),
+  randevu: phrase(
+    "RANDEVUYÜKÜHAFİFLER",
+    [6, 10],
+    "RANDEVU YÜKÜ HAFİFLER",
+  ),
+  time: phrase(
+    "ZAMANIİNSANAGERİVER",
+    [5, 11, 15],
+    "ZAMANI İNSANA GERİ VER",
+  ),
+  math: phrase(
+    "MATEMATİKDÜZENİAÇAR",
+    [8, 14],
+    "MATEMATİK DÜZENİ AÇAR",
+  ),
+  earth: phrase(
+    "DÜNYAYADAHAHAFİFBAS",
+    [6, 10, 15],
+    "DÜNYAYA DAHA HAFİF BAS",
+  ),
+  human: phrase(
+    "SİSTEMİNSANAYERAÇAR",
+    [5, 11, 14],
+    "SİSTEM İNSANA YER AÇAR",
+  ),
+  benefit: phrase(
+    "FAYDAKENDİNDENBÜYÜK",
+    [4, 13],
+    "FAYDA KENDİNDEN BÜYÜK",
+  ),
+  virtue: phrase(
+    "SESSİZCEİYİOLANIYAP",
+    [7, 10, 15],
+    "SESSİZCE İYİ OLANI YAP",
+  ),
+} as const;
+
+const BOOKING_TOKENS = [
+  "09", "00", "09", "30", "10", "00", "10", "30", "11", "00",
+  "11", "30", "12", "00", "12", "30", "13", "00", "✓",
+] as const;
+
+const MATH_TOKENS = [
+  "0", "1", "6", "6", "6", "7", "8", "19", "×", "+",
+  "=", "↻", "7", "19", "8", "6", "1", "0", "∞",
+] as const;
+
+const EARTH_TOKENS = [
+  "O₂", "CO₂", "H₂O", "°C", "↺", "☼", "N", "S", "E", "W",
+  "19", "1", "0", "+", "−", "≈", "·", "○", "O₂",
+] as const;
+
 const WORDS = ["PARÇA", "AYIRIM", "ANLAM", "YAPI"] as const;
 const H = new Set([1, 7, 8, 11, 12, 18]);
 
@@ -218,6 +276,67 @@ function primeSpiralPosition(
   };
 }
 
+function bookingPosition(index: number, width: number, height: number) {
+  const columns = 5;
+  const row = Math.floor(index / columns);
+  const column = index % columns;
+  const xStep = Math.min(width * 0.14, 138);
+  const yStep = Math.min(height * 0.105, 86);
+  const lastRowOffset = row === 3 ? xStep * 0.5 : 0;
+
+  return {
+    x: (column - 2) * xStep + lastRowOffset,
+    y: (row - 1.5) * yStep,
+    scale: index === 18 ? 1.08 : 0.72,
+    opacity: index === 18 ? 1 : 0.54 + (index % 3) * 0.12,
+    rotation: 0,
+  };
+}
+
+function timeFlowPosition(index: number, width: number, height: number) {
+  const t = index / (MODULUS - 1);
+  const span = Math.min(width * 0.82, 980);
+  const amplitude = Math.min(height * 0.12, 92);
+  const phase = t * Math.PI * 3.4;
+
+  return {
+    x: (t - 0.5) * span,
+    y: Math.sin(phase) * amplitude,
+    scale: 0.64 + (1 - Math.abs(t - 0.5) * 2) * 0.48,
+    opacity: 0.34 + (1 - Math.abs(t - 0.5) * 2) * 0.66,
+    rotation: Math.cos(phase) * 16,
+  };
+}
+
+function worldPosition(index: number, width: number, height: number) {
+  const minSide = Math.min(width, height);
+  const radius = Math.min(minSide * 0.41, 360);
+  const angle = -Math.PI / 2 + index * ((Math.PI * 2) / MODULUS);
+  const breathing = 0.92 + 0.08 * Math.sin(index * 1.9);
+
+  return {
+    x: Math.cos(angle) * radius * breathing,
+    y: Math.sin(angle) * radius * 0.54 * breathing,
+    scale: 0.48 + (index % 5) * 0.06,
+    opacity: 0.38 + (index % 4) * 0.12,
+    rotation: (angle * 180) / Math.PI + 90,
+  };
+}
+
+function openSpacePosition(index: number, width: number, height: number) {
+  const angle = -Math.PI / 2 + index * ((Math.PI * 2) / MODULUS);
+  const rx = Math.min(width * 0.43, 520);
+  const ry = Math.min(height * 0.36, 320);
+
+  return {
+    x: Math.cos(angle) * rx,
+    y: Math.sin(angle) * ry,
+    scale: 0.56,
+    opacity: 0.52,
+    rotation: 0,
+  };
+}
+
 function chaosPosition(index: number, seed: number, width: number, height: number) {
   const minSide = Math.min(width, height);
   const slot = mod(index * 7 + seed * 5);
@@ -337,29 +456,31 @@ export function H19Scroll() {
           invalidateOnRefresh: true,
           onUpdate: (self) => {
             section.dataset.phase =
-              self.progress < 0.045
+              self.progress < 0.025
                 ? "line"
-                : self.progress < 0.11
+                : self.progress < 0.08
                   ? "hex"
-                  : self.progress < 0.26
+                  : self.progress < 0.19
                     ? "h19-orbit"
-                    : self.progress < 0.35
+                    : self.progress < 0.28
                       ? "cosets"
-                      : self.progress < 0.46
-                        ? "prime-ring"
-                        : self.progress < 0.66
-                          ? "word-chaos"
-                          : self.progress < 0.78
-                            ? "question"
-                            : self.progress < 0.86
-                              ? "matter"
-                              : self.progress < 0.92
-                                ? "build"
-                                : self.progress < 0.955
-                                  ? "singularity"
-                                  : self.progress < 0.985
-                                    ? "prime-spiral"
-                                    : "new-system";
+                      : self.progress < 0.39
+                        ? "semantic-chaos"
+                        : self.progress < 0.48
+                          ? "new-system"
+                          : self.progress < 0.58
+                            ? "product"
+                            : self.progress < 0.66
+                              ? "time"
+                              : self.progress < 0.75
+                                ? "math"
+                                : self.progress < 0.84
+                                  ? "earth"
+                                  : self.progress < 0.91
+                                    ? "human"
+                                    : self.progress < 0.96
+                                      ? "benefit"
+                                      : "virtue";
           },
         },
       });
@@ -620,7 +741,341 @@ export function H19Scroll() {
         ease: "expo.inOut",
       });
 
-      timeline.to({}, { duration: 1.35 });
+      timeline.to({}, { duration: 0.82 });
+
+      timeline.to(glyphs, {
+        x: (index) => {
+          const { width, height } = viewport();
+          return chaosPosition(index, 23, width, height).x;
+        },
+        y: (index) => {
+          const { width, height } = viewport();
+          return chaosPosition(index, 23, width, height).y;
+        },
+        scale: (index) => {
+          const { width, height } = viewport();
+          return chaosPosition(index, 23, width, height).scale;
+        },
+        opacity: (index) => {
+          const { width, height } = viewport();
+          return chaosPosition(index, 23, width, height).opacity;
+        },
+        rotation: (index) => mod(index * 47, 120) - 60,
+        duration: 1.05,
+        ease: "power4.inOut",
+      });
+
+      timeline.set(glyphs, {
+        textContent: (index: number) => SYSTEM_PHRASES.kepenk.letters[index],
+      });
+
+      timeline.to(glyphs, {
+        x: (index) => phraseX(index, viewport().width, SYSTEM_PHRASES.kepenk.breaks),
+        y: 0,
+        scale: 1,
+        opacity: 1,
+        rotation: 0,
+        duration: 1.25,
+        stagger: { each: 0.012, from: "edges" },
+        ease: "expo.inOut",
+      });
+
+      timeline.to({}, { duration: 0.68 });
+
+      timeline.set(glyphs, {
+        textContent: (index: number) => BOOKING_TOKENS[index],
+      });
+
+      timeline.to(glyphs, {
+        x: (index) => {
+          const { width, height } = viewport();
+          return bookingPosition(index, width, height).x;
+        },
+        y: (index) => {
+          const { width, height } = viewport();
+          return bookingPosition(index, width, height).y;
+        },
+        scale: (index) => {
+          const { width, height } = viewport();
+          return bookingPosition(index, width, height).scale;
+        },
+        opacity: (index) => {
+          const { width, height } = viewport();
+          return bookingPosition(index, width, height).opacity;
+        },
+        rotation: 0,
+        duration: 1.35,
+        stagger: { each: 0.018, from: "start" },
+        ease: "power3.inOut",
+      });
+
+      timeline.to({}, { duration: 0.62 });
+
+      timeline.set(glyphs, {
+        textContent: (index: number) => SYSTEM_PHRASES.randevu.letters[index],
+      });
+
+      timeline.to(glyphs, {
+        x: (index) => phraseX(index, viewport().width, SYSTEM_PHRASES.randevu.breaks),
+        y: 0,
+        scale: 1,
+        opacity: 1,
+        rotation: 0,
+        duration: 1.2,
+        stagger: { each: 0.012, from: "center" },
+        ease: "expo.inOut",
+      });
+
+      timeline.to({}, { duration: 0.64 });
+
+      timeline.set(glyphs, {
+        textContent: (index: number) => SYSTEM_PHRASES.time.letters[index],
+      });
+
+      timeline.to(glyphs, {
+        x: (index) => {
+          const { width, height } = viewport();
+          return timeFlowPosition(index, width, height).x;
+        },
+        y: (index) => {
+          const { width, height } = viewport();
+          return timeFlowPosition(index, width, height).y;
+        },
+        scale: (index) => {
+          const { width, height } = viewport();
+          return timeFlowPosition(index, width, height).scale;
+        },
+        opacity: (index) => {
+          const { width, height } = viewport();
+          return timeFlowPosition(index, width, height).opacity;
+        },
+        rotation: (index) => {
+          const { width, height } = viewport();
+          return timeFlowPosition(index, width, height).rotation;
+        },
+        duration: 1.45,
+        stagger: { each: 0.012, from: "start" },
+        ease: "sine.inOut",
+      });
+
+      timeline.to(glyphs, {
+        x: (index) => phraseX(index, viewport().width, SYSTEM_PHRASES.time.breaks),
+        y: 0,
+        scale: 1,
+        opacity: 1,
+        rotation: 0,
+        duration: 1.1,
+        ease: "expo.inOut",
+      });
+
+      timeline.to({}, { duration: 0.68 });
+
+      timeline.set(glyphs, {
+        textContent: (index: number) => MATH_TOKENS[index],
+      });
+
+      timeline.to(glyphs, {
+        x: (index) => {
+          const { width, height } = viewport();
+          return cellPosition(index, width, height).x;
+        },
+        y: (index) => {
+          const { width, height } = viewport();
+          return cellPosition(index, width, height).y;
+        },
+        scale: (index) => ringScale(CELLS[index].ring) * 0.9,
+        opacity: 0.82,
+        rotation: 0,
+        duration: 1.25,
+        ease: "expo.inOut",
+      });
+
+      for (let step = 1; step <= 3; step += 1) {
+        const multiplier = powerMod(HEX_ROTATION, step);
+
+        timeline.to(glyphs, {
+          x: (index) => {
+            const target = mod(index * multiplier);
+            const { width, height } = viewport();
+            return cellPosition(target, width, height).x;
+          },
+          y: (index) => {
+            const target = mod(index * multiplier);
+            const { width, height } = viewport();
+            return cellPosition(target, width, height).y;
+          },
+          duration: 0.58,
+          ease: "sine.inOut",
+        });
+      }
+
+      timeline.set(glyphs, {
+        textContent: (index: number) => SYSTEM_PHRASES.math.letters[index],
+      });
+
+      timeline.to(glyphs, {
+        x: (index) => phraseX(index, viewport().width, SYSTEM_PHRASES.math.breaks),
+        y: 0,
+        scale: 1,
+        opacity: 1,
+        rotation: 0,
+        duration: 1.25,
+        stagger: { each: 0.01, from: "center" },
+        ease: "expo.inOut",
+      });
+
+      timeline.to({}, { duration: 0.7 });
+
+      timeline.set(glyphs, {
+        textContent: (index: number) => EARTH_TOKENS[index],
+      });
+
+      timeline.to(glyphs, {
+        x: (index) => {
+          const { width, height } = viewport();
+          return worldPosition(index, width, height).x;
+        },
+        y: (index) => {
+          const { width, height } = viewport();
+          return worldPosition(index, width, height).y;
+        },
+        scale: (index) => {
+          const { width, height } = viewport();
+          return worldPosition(index, width, height).scale;
+        },
+        opacity: (index) => {
+          const { width, height } = viewport();
+          return worldPosition(index, width, height).opacity;
+        },
+        rotation: (index) => {
+          const { width, height } = viewport();
+          return worldPosition(index, width, height).rotation;
+        },
+        duration: 1.55,
+        stagger: { each: 0.014, from: "center" },
+        ease: "sine.inOut",
+      });
+
+      timeline.set(glyphs, {
+        textContent: (index: number) => SYSTEM_PHRASES.earth.letters[index],
+      });
+
+      timeline.to(glyphs, {
+        x: (index) => phraseX(index, viewport().width, SYSTEM_PHRASES.earth.breaks),
+        y: 0,
+        scale: 0.92,
+        opacity: 0.88,
+        rotation: 0,
+        duration: 1.3,
+        stagger: { each: 0.012, from: "edges" },
+        ease: "expo.inOut",
+      });
+
+      timeline.to({}, { duration: 0.78 });
+
+      timeline.set(glyphs, {
+        textContent: (index: number) => SYSTEM_PHRASES.human.letters[index],
+      });
+
+      timeline.to(glyphs, {
+        x: (index) => phraseX(index, viewport().width, SYSTEM_PHRASES.human.breaks),
+        y: 0,
+        scale: 1,
+        opacity: 1,
+        duration: 1.15,
+        ease: "expo.inOut",
+      });
+
+      timeline.to(glyphs, {
+        x: (index) => {
+          const { width, height } = viewport();
+          return openSpacePosition(index, width, height).x;
+        },
+        y: (index) => {
+          const { width, height } = viewport();
+          return openSpacePosition(index, width, height).y;
+        },
+        scale: (index) => {
+          const { width, height } = viewport();
+          return openSpacePosition(index, width, height).scale;
+        },
+        opacity: (index) => {
+          const { width, height } = viewport();
+          return openSpacePosition(index, width, height).opacity;
+        },
+        duration: 1.5,
+        stagger: { each: 0.01, from: "center" },
+        ease: "expo.inOut",
+      });
+
+      timeline.to({}, { duration: 0.88 });
+
+      timeline.set(glyphs, {
+        textContent: (index: number) => SYSTEM_PHRASES.benefit.letters[index],
+      });
+
+      timeline.to(glyphs, {
+        x: (index) => phraseX(index, viewport().width, SYSTEM_PHRASES.benefit.breaks),
+        y: 0,
+        scale: 1,
+        opacity: 1,
+        rotation: 0,
+        duration: 1.25,
+        ease: "expo.inOut",
+      });
+
+      timeline.to(glyphs, {
+        scale: (index) => (index >= 5 && index <= 13 ? 0.34 : 1.18),
+        opacity: (index) => (index >= 5 && index <= 13 ? 0.2 : 1),
+        y: (index) => (index >= 5 && index <= 13 ? 10 : 0),
+        duration: 1.15,
+        ease: "power3.inOut",
+      });
+
+      timeline.to({}, { duration: 0.7 });
+
+      timeline.to(glyphs, {
+        x: (index) => singularityPosition(index).x,
+        y: (index) => singularityPosition(index).y,
+        scale: (index) => singularityPosition(index).scale,
+        opacity: (index) => singularityPosition(index).opacity,
+        rotation: (index) => singularityPosition(index).rotation,
+        duration: 1.2,
+        ease: "expo.in",
+      });
+
+      timeline.set(glyphs, {
+        textContent: (index: number) => SYSTEM_PHRASES.virtue.letters[index],
+      });
+
+      timeline.to(glyphs, {
+        x: (index) => phraseX(index, viewport().width, SYSTEM_PHRASES.virtue.breaks),
+        y: 0,
+        scale: 0.72,
+        opacity: 0.72,
+        rotation: 0,
+        duration: 1.55,
+        stagger: { each: 0.018, from: "center" },
+        ease: "expo.out",
+      });
+
+      timeline.to(glyphs, {
+        scale: (index) => (index >= 8 && index <= 10 ? 0.92 : 0.66),
+        opacity: (index) => (index >= 8 && index <= 10 ? 1 : 0.3),
+        duration: 0.72,
+        ease: "sine.inOut",
+      });
+
+      timeline.to({}, { duration: 0.52 });
+
+      timeline.to(glyphs, {
+        scale: 0.66,
+        opacity: 0.62,
+        duration: 0.9,
+        ease: "sine.inOut",
+      });
+
+      timeline.to({}, { duration: 1.8 });
     }, root);
 
     return () => context.revert();
@@ -636,7 +1091,11 @@ export function H19Scroll() {
       >
         <div ref={stage} className={styles.stage}>
           <p className={styles.srOnly}>
-            {[...PHRASES.map((item) => item.spoken), FINALE.spoken].join(". ")}.
+            {[
+              ...PHRASES.map((item) => item.spoken),
+              FINALE.spoken,
+              ...Object.values(SYSTEM_PHRASES).map((item) => item.spoken),
+            ].join(". ")}.
           </p>
 
           <div className={styles.field} aria-hidden="true">
