@@ -8,6 +8,8 @@ import styles from "./H19Scroll.module.css";
 const MODULUS = 19;
 const HEX_ROTATION = 8;
 const TRI_REORDER = 7;
+const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5));
+const FIBONACCI_PULSES = [0, 1, 2, 4, 7, 12] as const;
 
 type Axial = {
   q: number;
@@ -185,6 +187,27 @@ function phraseX(index: number, width: number, breaks: number[]) {
   const logical = index + gapsBefore * gap;
 
   return (logical - (totalUnits - 1) / 2) * unit;
+}
+
+function preludePosition(
+  index: number,
+  width: number,
+  height: number,
+) {
+  const baseX = phraseX(index, width, PHRASES[0].breaks);
+  const isSeed = index < 5;
+  const progress = index / (MODULUS - 1);
+  const radius = Math.min(width * 0.045, 56) * (0.45 + progress);
+  const angle = index * GOLDEN_ANGLE;
+  const verticalLimit = Math.min(height * 0.075, 54);
+
+  return {
+    x: baseX + Math.cos(angle) * radius * (isSeed ? 0.22 : 1),
+    y: Math.sin(angle) * Math.min(radius, verticalLimit),
+    scale: isSeed ? 1.16 + index * 0.025 : 0.88 + (index % 4) * 0.045,
+    opacity: isSeed ? 1 : 0.58 + (index % 5) * 0.075,
+    rotation: isSeed ? 0 : Math.sin(angle) * 14,
+  };
 }
 
 function cellPosition(id: number, width: number, height: number) {
@@ -456,12 +479,18 @@ export function H19Scroll() {
           invalidateOnRefresh: true,
           onUpdate: (self) => {
             section.dataset.phase =
-              self.progress < 0.025
+              self.progress < 0.012
                 ? "line"
-                : self.progress < 0.08
-                  ? "hex"
-                  : self.progress < 0.19
-                    ? "h19-orbit"
+                : self.progress < 0.027
+                  ? "breath"
+                  : self.progress < 0.045
+                    ? "fibonacci"
+                    : self.progress < 0.067
+                      ? "golden-drift"
+                      : self.progress < 0.105
+                        ? "hex"
+                        : self.progress < 0.205
+                          ? "h19-orbit"
                     : self.progress < 0.28
                       ? "cosets"
                       : self.progress < 0.39
@@ -485,34 +514,147 @@ export function H19Scroll() {
         },
       });
 
-      timeline.fromTo(
-        glyphs,
-        {
-          x: (index) => phraseX(index, viewport().width, PHRASES[0].breaks),
-          y: 0,
-          scale: 1,
-          opacity: 1,
-        },
-        {
-          x: (index) => {
-            const { width, height } = viewport();
-            return cellPosition(index, width, height).x;
-          },
-          y: (index) => {
-            const { width, height } = viewport();
-            return cellPosition(index, width, height).y;
-          },
-          scale: (index) => ringScale(CELLS[index].ring),
-          duration: 1.35,
-          stagger: {
-            each: 0.015,
-            from: "center",
-          },
-        },
-        0.6,
-      );
+      timeline.set(glyphs, {
+        x: (index) => phraseX(index, viewport().width, PHRASES[0].breaks),
+        y: 0,
+        scale: 1,
+        opacity: 1,
+        rotation: 0,
+      });
 
-      timeline.to({}, { duration: 0.32 });
+      // First breath: the sentence is alive before it begins to separate.
+      timeline.to(glyphs, {
+        scale: 1.055,
+        y: (index) => Math.sin((index / (MODULUS - 1)) * Math.PI) * -5,
+        duration: 0.52,
+        ease: "sine.inOut",
+      });
+
+      timeline.to(glyphs, {
+        scale: 0.985,
+        y: 0,
+        duration: 0.32,
+        ease: "sine.inOut",
+      });
+
+      // Second beat is slightly stronger: a heartbeat, not a loop.
+      timeline.to(glyphs, {
+        scale: 1.085,
+        duration: 0.24,
+        ease: "power2.out",
+      });
+
+      timeline.to(glyphs, {
+        scale: 1,
+        duration: 0.38,
+        ease: "power2.inOut",
+      });
+
+      // Fibonacci accents travel through the sentence as a hidden counting rhythm.
+      FIBONACCI_PULSES.forEach((glyphIndex) => {
+        timeline.to(
+          glyphs[glyphIndex],
+          {
+            scale: glyphIndex < 5 ? 1.52 : 1.34,
+            y: glyphIndex % 2 === 0 ? -13 : 11,
+            opacity: 1,
+            duration: 0.22,
+            ease: "power3.out",
+          },
+          "<0.075",
+        );
+
+        timeline.to(
+          glyphs[glyphIndex],
+          {
+            scale: 1,
+            y: 0,
+            duration: 0.31,
+            ease: "sine.inOut",
+          },
+          "<0.07",
+        );
+      });
+
+      timeline.to({}, { duration: 0.24 });
+
+      // The first five letters gain mass while the rest begin a golden-angle drift.
+      timeline.to(glyphs, {
+        x: (index) => {
+          const { width, height } = viewport();
+          return preludePosition(index, width, height).x;
+        },
+        y: (index) => {
+          const { width, height } = viewport();
+          return preludePosition(index, width, height).y;
+        },
+        scale: (index) => {
+          const { width, height } = viewport();
+          return preludePosition(index, width, height).scale;
+        },
+        opacity: (index) => {
+          const { width, height } = viewport();
+          return preludePosition(index, width, height).opacity;
+        },
+        rotation: (index) => {
+          const { width, height } = viewport();
+          return preludePosition(index, width, height).rotation;
+        },
+        duration: 1.05,
+        stagger: {
+          each: 0.015,
+          from: "edges",
+        },
+        ease: "expo.inOut",
+      });
+
+      // A brief pressure wave folds the drift back toward a single mathematical center.
+      timeline.to(glyphs, {
+        scale: (index) => (index < 5 ? 1.22 : 0.74),
+        opacity: (index) => (index < 5 ? 1 : 0.44),
+        y: (index) => {
+          const { width, height } = viewport();
+          const point = preludePosition(index, width, height);
+          return point.y * 0.52;
+        },
+        duration: 0.44,
+        ease: "power2.inOut",
+      });
+
+      timeline.to(glyphs, {
+        x: (index) => {
+          const { width, height } = viewport();
+          return cellPosition(index, width, height).x;
+        },
+        y: (index) => {
+          const { width, height } = viewport();
+          return cellPosition(index, width, height).y;
+        },
+        scale: (index) => ringScale(CELLS[index].ring),
+        opacity: 1,
+        rotation: 0,
+        duration: 1.42,
+        stagger: {
+          each: 0.018,
+          from: "center",
+        },
+        ease: "expo.inOut",
+      });
+
+      // The H19 cell itself breathes once before rotation begins.
+      timeline.to(glyphs, {
+        scale: (index) => ringScale(CELLS[index].ring) * 1.075,
+        duration: 0.26,
+        ease: "sine.out",
+      });
+
+      timeline.to(glyphs, {
+        scale: (index) => ringScale(CELLS[index].ring),
+        duration: 0.34,
+        ease: "sine.inOut",
+      });
+
+      timeline.to({}, { duration: 0.34 });
 
       for (let step = 1; step <= 6; step += 1) {
         const multiplier = powerMod(HEX_ROTATION, step);
