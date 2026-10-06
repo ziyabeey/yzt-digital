@@ -7,7 +7,8 @@ import styles from "./H19Scroll.module.css";
 
 const LETTERS = Array.from("PARÇALARINAAYIRIRIM");
 const MODULUS = 19;
-const ROTATION = 8;
+const HEX_ROTATION = 8;
+const TRI_REORDER = 7;
 
 type Axial = {
   q: number;
@@ -35,7 +36,7 @@ function buildAxialMap(): Axial[] {
     const rMax = Math.min(2, -q + 2);
 
     for (let r = rMin; r <= rMax; r += 1) {
-      const id = mod(q + ROTATION * r);
+      const id = mod(q + HEX_ROTATION * r);
       cells[id] = { q, r, ring: axialRing(q, r) };
     }
   }
@@ -80,7 +81,7 @@ function orbitStep(id: number) {
   const representative = orbitRepresentative(orbit);
 
   for (let step = 0; step < 6; step += 1) {
-    if (mod(representative * powerMod(ROTATION, step)) === id) {
+    if (mod(representative * powerMod(HEX_ROTATION, step)) === id) {
       return step;
     }
   }
@@ -142,6 +143,18 @@ function orbitPosition(
   };
 }
 
+function polygonPosition(slot: number, width: number, height: number) {
+  const minSide = Math.min(width, height);
+  const radius = Math.min(minSide * 0.385, 350);
+  const angle = -Math.PI / 2 + slot * ((Math.PI * 2) / MODULUS);
+
+  return {
+    x: Math.cos(angle) * radius,
+    y: Math.sin(angle) * radius,
+    scale: 0.84,
+  };
+}
+
 export function H19Scroll() {
   const root = useRef<HTMLElement>(null);
   const stage = useRef<HTMLDivElement>(null);
@@ -197,15 +210,19 @@ export function H19Scroll() {
           invalidateOnRefresh: true,
           onUpdate: (self) => {
             section.dataset.phase =
-              self.progress < 0.09
+              self.progress < 0.07
                 ? "line"
-                : self.progress < 0.22
+                : self.progress < 0.18
                   ? "hex"
-                  : self.progress < 0.56
+                  : self.progress < 0.43
                     ? "h19-orbit"
-                    : self.progress < 0.7
+                    : self.progress < 0.54
                       ? "split"
-                      : "cosets";
+                      : self.progress < 0.79
+                        ? "cosets"
+                        : self.progress < 0.88
+                          ? "prime-ring"
+                          : "reorder";
           },
         },
       });
@@ -240,7 +257,7 @@ export function H19Scroll() {
       timeline.to({}, { duration: 0.42 });
 
       for (let step = 1; step <= 6; step += 1) {
-        const multiplier = powerMod(ROTATION, step);
+        const multiplier = powerMod(HEX_ROTATION, step);
 
         timeline.to(
           glyphs,
@@ -306,7 +323,55 @@ export function H19Scroll() {
         );
       }
 
-      timeline.to({}, { duration: 0.8 });
+      timeline.to({}, { duration: 0.55 });
+
+      timeline.to(glyphs, {
+        x: (index) => {
+          const { width, height } = viewport();
+          return polygonPosition(index, width, height).x;
+        },
+        y: (index) => {
+          const { width, height } = viewport();
+          return polygonPosition(index, width, height).y;
+        },
+        scale: (index) => {
+          const { width, height } = viewport();
+          return polygonPosition(index, width, height).scale;
+        },
+        duration: 1.5,
+        stagger: {
+          each: 0.012,
+          from: "center",
+        },
+        ease: "expo.inOut",
+      });
+
+      timeline.to({}, { duration: 0.35 });
+
+      for (let step = 1; step <= 3; step += 1) {
+        const multiplier = powerMod(TRI_REORDER, step);
+
+        timeline.to(
+          glyphs,
+          {
+            x: (index) => {
+              const target = mod(index * multiplier);
+              const { width, height } = viewport();
+              return polygonPosition(target, width, height).x;
+            },
+            y: (index) => {
+              const target = mod(index * multiplier);
+              const { width, height } = viewport();
+              return polygonPosition(target, width, height).y;
+            },
+            duration: 0.92,
+            ease: "power3.inOut",
+          },
+          ">",
+        );
+      }
+
+      timeline.to({}, { duration: 0.95 });
     }, root);
 
     return () => context.revert();
