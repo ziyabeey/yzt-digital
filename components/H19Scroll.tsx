@@ -210,6 +210,88 @@ function preludePosition(
   };
 }
 
+function fracturePosition(
+  index: number,
+  width: number,
+  height: number,
+) {
+  const upper = index < 10;
+  const local = upper ? index : index - 10;
+  const count = upper ? 10 : 9;
+  const t = count <= 1 ? 0.5 : local / (count - 1);
+  const span = Math.min(width * 0.78, 980);
+  const rise = Math.min(height * 0.34, 250);
+  const x = (t - 0.5) * span;
+  const y = (t - 0.5) * rise * (upper ? -1 : 1);
+
+  return {
+    x,
+    y,
+    scale: index < 5 ? 1.18 : 0.88 + (index % 3) * 0.06,
+    opacity: index < 5 ? 1 : 0.7,
+    rotation: upper ? -11 : 11,
+  };
+}
+
+function fibonacciVortexPosition(
+  index: number,
+  width: number,
+  height: number,
+) {
+  const minSide = Math.min(width, height);
+
+  if (index < 5) {
+    const angle = -Math.PI / 2 + index * ((Math.PI * 2) / 5);
+    const radius = Math.min(minSide * 0.115, 96);
+
+    return {
+      x: Math.cos(angle) * radius,
+      y: Math.sin(angle) * radius,
+      scale: 1.42,
+      opacity: 1,
+      rotation: 0,
+    };
+  }
+
+  const local = index - 5;
+  const progress = (local + 1) / 14;
+  const angle = local * GOLDEN_ANGLE - Math.PI / 2;
+  const radius = minSide * (0.15 + Math.sqrt(progress) * 0.32);
+
+  return {
+    x: Math.cos(angle) * radius,
+    y: Math.sin(angle) * radius * 0.82,
+    scale: 0.58 + progress * 0.32,
+    opacity: 0.3 + progress * 0.5,
+    rotation: (angle * 180) / Math.PI * 0.16,
+  };
+}
+
+function heartPosition(
+  index: number,
+  width: number,
+  height: number,
+  beat = 1,
+) {
+  const t = -Math.PI / 2 + index * ((Math.PI * 2) / MODULUS);
+  const xRaw = 16 * Math.pow(Math.sin(t), 3);
+  const yRaw =
+    13 * Math.cos(t) -
+    5 * Math.cos(2 * t) -
+    2 * Math.cos(3 * t) -
+    Math.cos(4 * t);
+  const rx = Math.min(width * 0.31, 310);
+  const ry = Math.min(height * 0.29, 235);
+
+  return {
+    x: (xRaw / 17) * rx * beat,
+    y: -(yRaw / 17) * ry * beat + Math.min(height * 0.035, 26),
+    scale: index < 5 ? 1.18 : 0.76,
+    opacity: index < 5 ? 1 : 0.62,
+    rotation: 0,
+  };
+}
+
 function cellPosition(id: number, width: number, height: number) {
   const cell = CELLS[id];
   const size = Math.min(width * 0.082, height * 0.095, 76);
@@ -478,38 +560,29 @@ export function H19Scroll() {
           scrub: 0.72,
           invalidateOnRefresh: true,
           onUpdate: (self) => {
-            section.dataset.phase =
-              self.progress < 0.012
-                ? "line"
-                : self.progress < 0.027
-                  ? "breath"
-                  : self.progress < 0.045
-                    ? "fibonacci"
-                    : self.progress < 0.067
-                      ? "golden-drift"
-                      : self.progress < 0.105
-                        ? "hex"
-                        : self.progress < 0.205
-                          ? "h19-orbit"
-                    : self.progress < 0.28
-                      ? "cosets"
-                      : self.progress < 0.39
-                        ? "semantic-chaos"
-                        : self.progress < 0.48
-                          ? "new-system"
-                          : self.progress < 0.58
-                            ? "product"
-                            : self.progress < 0.66
-                              ? "time"
-                              : self.progress < 0.75
-                                ? "math"
-                                : self.progress < 0.84
-                                  ? "earth"
-                                  : self.progress < 0.91
-                                    ? "human"
-                                    : self.progress < 0.96
-                                      ? "benefit"
-                                      : "virtue";
+            const progress = self.progress;
+            let phase = "virtue";
+
+            if (progress < 0.012) phase = "line";
+            else if (progress < 0.025) phase = "breath";
+            else if (progress < 0.04) phase = "fibonacci";
+            else if (progress < 0.058) phase = "fracture";
+            else if (progress < 0.078) phase = "vortex";
+            else if (progress < 0.098) phase = "heart";
+            else if (progress < 0.122) phase = "parca";
+            else if (progress < 0.17) phase = "hex";
+            else if (progress < 0.255) phase = "h19-orbit";
+            else if (progress < 0.32) phase = "cosets";
+            else if (progress < 0.41) phase = "semantic-chaos";
+            else if (progress < 0.5) phase = "new-system";
+            else if (progress < 0.59) phase = "product";
+            else if (progress < 0.67) phase = "time";
+            else if (progress < 0.76) phase = "math";
+            else if (progress < 0.85) phase = "earth";
+            else if (progress < 0.92) phase = "human";
+            else if (progress < 0.965) phase = "benefit";
+
+            section.dataset.phase = phase;
           },
         },
       });
@@ -608,19 +681,139 @@ export function H19Scroll() {
         ease: "expo.inOut",
       });
 
-      // A brief pressure wave folds the drift back toward a single mathematical center.
+      // Scene shift 1: a literal fracture. The sentence stops looking like a sentence.
       timeline.to(glyphs, {
-        scale: (index) => (index < 5 ? 1.22 : 0.74),
-        opacity: (index) => (index < 5 ? 1 : 0.44),
+        x: (index) => {
+          const { width, height } = viewport();
+          return fracturePosition(index, width, height).x;
+        },
         y: (index) => {
           const { width, height } = viewport();
-          const point = preludePosition(index, width, height);
-          return point.y * 0.52;
+          return fracturePosition(index, width, height).y;
         },
-        duration: 0.44,
-        ease: "power2.inOut",
+        scale: (index) => {
+          const { width, height } = viewport();
+          return fracturePosition(index, width, height).scale;
+        },
+        opacity: (index) => {
+          const { width, height } = viewport();
+          return fracturePosition(index, width, height).opacity;
+        },
+        rotation: (index) => {
+          const { width, height } = viewport();
+          return fracturePosition(index, width, height).rotation;
+        },
+        duration: 1.05,
+        stagger: { each: 0.012, from: "center" },
+        ease: "expo.inOut",
       });
 
+      timeline.to({}, { duration: 0.26 });
+
+      // Scene shift 2: PARÇA becomes the inner seed of a golden-angle vortex.
+      timeline.to(glyphs, {
+        x: (index) => {
+          const { width, height } = viewport();
+          return fibonacciVortexPosition(index, width, height).x;
+        },
+        y: (index) => {
+          const { width, height } = viewport();
+          return fibonacciVortexPosition(index, width, height).y;
+        },
+        scale: (index) => {
+          const { width, height } = viewport();
+          return fibonacciVortexPosition(index, width, height).scale;
+        },
+        opacity: (index) => {
+          const { width, height } = viewport();
+          return fibonacciVortexPosition(index, width, height).opacity;
+        },
+        rotation: (index) => {
+          const { width, height } = viewport();
+          return fibonacciVortexPosition(index, width, height).rotation;
+        },
+        duration: 1.18,
+        stagger: { each: 0.014, from: "edges" },
+        ease: "expo.inOut",
+      });
+
+      timeline.to({}, { duration: 0.26 });
+
+      // Scene shift 3: all 19 letters form one heartbeat before meaning locks.
+      timeline.to(glyphs, {
+        x: (index) => {
+          const { width, height } = viewport();
+          return heartPosition(index, width, height, 1).x;
+        },
+        y: (index) => {
+          const { width, height } = viewport();
+          return heartPosition(index, width, height, 1).y;
+        },
+        scale: (index) => {
+          const { width, height } = viewport();
+          return heartPosition(index, width, height, 1).scale;
+        },
+        opacity: (index) => {
+          const { width, height } = viewport();
+          return heartPosition(index, width, height, 1).opacity;
+        },
+        rotation: 0,
+        duration: 1.15,
+        ease: "expo.inOut",
+      });
+
+      timeline.to(glyphs, {
+        x: (index) => {
+          const { width, height } = viewport();
+          return heartPosition(index, width, height, 1.095).x;
+        },
+        y: (index) => {
+          const { width, height } = viewport();
+          return heartPosition(index, width, height, 1.095).y;
+        },
+        duration: 0.24,
+        ease: "sine.out",
+      });
+
+      timeline.to(glyphs, {
+        x: (index) => {
+          const { width, height } = viewport();
+          return heartPosition(index, width, height, 1).x;
+        },
+        y: (index) => {
+          const { width, height } = viewport();
+          return heartPosition(index, width, height, 1).y;
+        },
+        duration: 0.36,
+        ease: "sine.inOut",
+      });
+
+      // The first semantic lock arrives early: PARÇA is born from the field.
+      timeline.to(glyphs, {
+        x: (index) => {
+          const { width, height } = viewport();
+          return wordPosition(index, WORD_INDEXES[0].indices, 1, width, height).x;
+        },
+        y: (index) => {
+          const { width, height } = viewport();
+          return wordPosition(index, WORD_INDEXES[0].indices, 1, width, height).y;
+        },
+        scale: (index) => {
+          const { width, height } = viewport();
+          return wordPosition(index, WORD_INDEXES[0].indices, 1, width, height).scale;
+        },
+        opacity: (index) => {
+          const { width, height } = viewport();
+          return wordPosition(index, WORD_INDEXES[0].indices, 1, width, height).opacity;
+        },
+        rotation: 0,
+        duration: 1.08,
+        ease: "expo.inOut",
+      });
+
+      timeline.to({}, { duration: 0.62 });
+
+      // PARÇA dissolves into the mathematical law that produced it.
       timeline.to(glyphs, {
         x: (index) => {
           const { width, height } = viewport();
@@ -633,7 +826,7 @@ export function H19Scroll() {
         scale: (index) => ringScale(CELLS[index].ring),
         opacity: 1,
         rotation: 0,
-        duration: 1.42,
+        duration: 1.32,
         stagger: {
           each: 0.018,
           from: "center",
@@ -641,7 +834,6 @@ export function H19Scroll() {
         ease: "expo.inOut",
       });
 
-      // The H19 cell itself breathes once before rotation begins.
       timeline.to(glyphs, {
         scale: (index) => ringScale(CELLS[index].ring) * 1.075,
         duration: 0.26,
@@ -747,23 +939,23 @@ export function H19Scroll() {
 
       timeline.to({}, { duration: 0.35 });
 
-      WORD_INDEXES.forEach(({ indices }, wordIndex) => {
+      WORD_INDEXES.slice(1).forEach(({ indices }, wordIndex) => {
         timeline.to(glyphs, {
           x: (index) => {
             const { width, height } = viewport();
-            return wordPosition(index, indices, wordIndex + 1, width, height).x;
+            return wordPosition(index, indices, wordIndex + 2, width, height).x;
           },
           y: (index) => {
             const { width, height } = viewport();
-            return wordPosition(index, indices, wordIndex + 1, width, height).y;
+            return wordPosition(index, indices, wordIndex + 2, width, height).y;
           },
           scale: (index) => {
             const { width, height } = viewport();
-            return wordPosition(index, indices, wordIndex + 1, width, height).scale;
+            return wordPosition(index, indices, wordIndex + 2, width, height).scale;
           },
           opacity: (index) => {
             const { width, height } = viewport();
-            return wordPosition(index, indices, wordIndex + 1, width, height).opacity;
+            return wordPosition(index, indices, wordIndex + 2, width, height).opacity;
           },
           duration: 1.05,
           ease: "expo.inOut",
