@@ -15,6 +15,8 @@ type Axial = {
   ring: 0 | 1 | 2;
 };
 
+type OrbitName = "0" | "H" | "2H" | "9H";
+
 const H = new Set([1, 7, 8, 11, 12, 18]);
 
 function mod(value: number, base = MODULUS) {
@@ -47,11 +49,18 @@ function buildAxialMap(): Axial[] {
 
 const CELLS = buildAxialMap();
 
-function orbitOf(id: number) {
+function orbitOf(id: number): OrbitName {
   if (id === 0) return "0";
   if (H.has(id)) return "H";
   if (H.has(mod(id * 10))) return "2H";
   return "9H";
+}
+
+function orbitRepresentative(orbit: OrbitName) {
+  if (orbit === "H") return 1;
+  if (orbit === "2H") return 2;
+  if (orbit === "9H") return 9;
+  return 0;
 }
 
 function powerMod(base: number, exponent: number) {
@@ -62,6 +71,21 @@ function powerMod(base: number, exponent: number) {
   }
 
   return result;
+}
+
+function orbitStep(id: number) {
+  if (id === 0) return 0;
+
+  const orbit = orbitOf(id);
+  const representative = orbitRepresentative(orbit);
+
+  for (let step = 0; step < 6; step += 1) {
+    if (mod(representative * powerMod(ROTATION, step)) === id) {
+      return step;
+    }
+  }
+
+  throw new Error(`H19 orbit step missing for ${id}`);
 }
 
 function phraseX(index: number, width: number) {
@@ -86,6 +110,36 @@ function ringScale(ring: Axial["ring"]) {
   if (ring === 0) return 1.34;
   if (ring === 1) return 1.06;
   return 0.88;
+}
+
+function orbitPosition(
+  id: number,
+  width: number,
+  height: number,
+  turn = 0,
+) {
+  if (id === 0) {
+    return { x: 0, y: 0, scale: 1.42 };
+  }
+
+  const orbit = orbitOf(id);
+  const minSide = Math.min(width, height);
+  const outerRadius = Math.min(minSide * 0.36, 330);
+  const radius =
+    orbit === "H"
+      ? outerRadius * 0.4
+      : orbit === "2H"
+        ? outerRadius * 0.7
+        : outerRadius;
+
+  const step = mod(orbitStep(id) + turn, 6);
+  const angle = -Math.PI / 2 + step * (Math.PI / 3);
+
+  return {
+    x: Math.cos(angle) * radius,
+    y: Math.sin(angle) * radius,
+    scale: orbit === "H" ? 1.05 : orbit === "2H" ? 0.94 : 0.84,
+  };
 }
 
 export function H19Scroll() {
@@ -143,11 +197,15 @@ export function H19Scroll() {
           invalidateOnRefresh: true,
           onUpdate: (self) => {
             section.dataset.phase =
-              self.progress < 0.16
+              self.progress < 0.09
                 ? "line"
-                : self.progress < 0.38
+                : self.progress < 0.22
                   ? "hex"
-                  : "orbit";
+                  : self.progress < 0.56
+                    ? "h19-orbit"
+                    : self.progress < 0.7
+                      ? "split"
+                      : "cosets";
           },
         },
       });
@@ -204,7 +262,51 @@ export function H19Scroll() {
         );
       }
 
-      timeline.to({}, { duration: 0.55 });
+      timeline.to({}, { duration: 0.5 });
+
+      timeline.to(glyphs, {
+        x: (index) => {
+          const { width, height } = viewport();
+          return orbitPosition(index, width, height).x;
+        },
+        y: (index) => {
+          const { width, height } = viewport();
+          return orbitPosition(index, width, height).y;
+        },
+        scale: (index) => {
+          const { width, height } = viewport();
+          return orbitPosition(index, width, height).scale;
+        },
+        duration: 1.6,
+        stagger: {
+          each: 0.014,
+          from: "center",
+        },
+        ease: "expo.inOut",
+      });
+
+      timeline.to({}, { duration: 0.42 });
+
+      for (let turn = 1; turn <= 6; turn += 1) {
+        timeline.to(
+          glyphs,
+          {
+            x: (index) => {
+              const { width, height } = viewport();
+              return orbitPosition(index, width, height, turn).x;
+            },
+            y: (index) => {
+              const { width, height } = viewport();
+              return orbitPosition(index, width, height, turn).y;
+            },
+            duration: 0.68,
+            ease: "sine.inOut",
+          },
+          ">",
+        );
+      }
+
+      timeline.to({}, { duration: 0.8 });
     }, root);
 
     return () => context.revert();
@@ -229,6 +331,7 @@ export function H19Scroll() {
                 data-h19-id={index}
                 data-h19-ring={CELLS[index].ring}
                 data-h19-orbit={orbitOf(index)}
+                data-h19-orbit-step={orbitStep(index)}
                 key={`${index}-${letter}`}
               >
                 {letter}
