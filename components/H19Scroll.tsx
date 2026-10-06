@@ -535,7 +535,7 @@ export function H19Scroll() {
         duration: 1.35,
         stagger: {
           each: 0.014,
-          from: "random",
+          from: "edges",
         },
         ease: "expo.inOut",
       });
