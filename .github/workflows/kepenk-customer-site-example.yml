@@ -1,0 +1,62 @@
+name: Kepenk customer site example
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: kepenk-customer-site-example
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Prepare static assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          cp external/kepenk/customer-site-example.html dist/index.html
+
+      - name: Deploy Worker and custom domain
+        shell: bash
+        run: npx --yes wrangler@4.32.0 deploy --config kepenk-customer-site-example.wrangler.jsonc --minify
+
+      - name: Verify customer page
+        shell: bash
+        run: |
+          set -euo pipefail
+          page_url="https://ahmet.randevukolay.net"
+          for attempt in $(seq 1 24); do
+            body="$(curl --fail --silent --show-error --location --max-time 20 "$page_url" || true)"
+            if echo "$body" | grep -q "Ahmet Berber Salonu"; then
+              {
+                echo "## Kepenk customer site example deployed"
+                echo
+                echo "- URL: $page_url"
+                echo "- Runtime: Cloudflare Worker static assets"
+              } >> "$GITHUB_STEP_SUMMARY"
+              echo "Customer site is live: $page_url"
+              exit 0
+            fi
+            echo "Waiting for $page_url ($attempt/24)..."
+            sleep 10
+          done
+          echo "$page_url did not become healthy."
+          exit 1
